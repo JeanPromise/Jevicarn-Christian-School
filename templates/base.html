@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="desc4:36 PM 10/31/20254:36 PM 10/31/20254:36 PM 10/31/2025ription" content="{{ description }}">
+<meta name="keywords" content="{{ keywords }}">
+<meta name="robots" content="index, follow">
+
+  <title>{{ title }} | Jevicarn Christian Kindergarten</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta name="description" content="Warm, safe, playful early learning for little ones in your neighbourhood.">
+</head>
+<body>
+  <div class="site-wrap">
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">
+          <div class="logo">JC</div>
+          <div class="brand-text">
+            <div class="brand-name">Jevicarn Christian Kindergarten</div>
+            <div class="tag">Where learning feels like playtime</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="/">Home</a>
+          <a href="/gallery">Gallery</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <a class="btn btn-primary" href="/contact">Book a Visit</a>
+      </div>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div>Call / WhatsApp: <strong>+254 700 000 000</strong></div>
+        <div>&copy; {{ current_year }} Jevicarn Christian Kindergarten</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- JS links -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <script>
+    // Keep-alive ping (prevents free host sleeping)
+    (function(){
+      const ENABLE = true;
+      if(!ENABLE) return;
+      setInterval(()=>{ fetch('/keepalive-ping').catch(_=>0); }, 30000);
+    })();
+  </script>
+</body>
+</html>

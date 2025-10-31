@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="gallery">
+  <h2 class="section-title">Our Lovely Moments</h2>
+  <p class="section-subtitle">A glimpse of joy, creativity, and laughter at Jevicarn Christian Kindergarten.</p>
+
+  <div class="gallery-grid">
+    {% for image in images %}
+      <div class="gallery-item">
+        <img src="{{ url_for('static', filename=image) }}" 
+             alt="Daycare photo"
+             loading="lazy"
+             onclick="openLightbox({{ loop.index0 }})">
+      </div>
+    {% else %}
+      <p class="no-images">No images found in the gallery yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="lightbox">
+  <span class="close-btn" onclick="closeLightbox()">×</span>
+  <span class="arrow left" onclick="prevImage()">&#10094;</span>
+  <img id="lightbox-img" src="" alt="Expanded photo">
+  <span class="arrow right" onclick="nextImage()">&#10095;</span>
+</div>
+<div id="lightbox">
+  <span class="close-btn">&times;</span>
+  <span class="nav-arrow left">&#10094;</span>
+  <span class="nav-arrow right">&#10095;</span>
+  <img src="" alt="lightbox image">
+</div>
+
+<script>
+  let images = [
+    {% for image in images %}
+      "{{ url_for('static', filename=image) }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+  let currentIndex = 0;
+
+  function openLightbox(index) {
+    currentIndex = index;
+    document.getElementById("lightbox").style.display = "flex";
+    document.getElementById("lightbox-img").src = images[currentIndex];
+  }
+
+  function closeLightbox() {
+    document.getElementById("lightbox").style.display = "none";
+  }
+
+  function nextImage() {
+    currentIndex = (currentIndex + 1) % images.length;
+    document.getElementById("lightbox-img").src = images[currentIndex];
+  }
+
+  function prevImage() {
+    currentIndex = (currentIndex - 1 + images.length) % images.length;
+    document.getElementById("lightbox-img").src = images[currentIndex];
+  }
+
+  // Swipe support for mobile
+  let startX = 0;
+  const lightbox = document.getElementById("lightbox");
+  lightbox.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+  lightbox.addEventListener('touchend', e => {
+    let endX = e.changedTouches[0].clientX;
+    if (startX - endX > 50) nextImage();      // swipe left
+    else if (endX - startX > 50) prevImage(); // swipe right
+  });
+</script>
+
+{% endblock %}

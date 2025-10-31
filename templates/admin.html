@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+  <section class="container admin-grid">
+    <h1>Admin</h1>
+    <div class="card">
+      <h3>Upload</h3>
+      <form action="{{ url_for('upload') }}?auth={{ request.args.get('auth','') }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="photo" accept="image/*">
+        <button class="btn btn-primary" type="submit">Upload</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Recent contacts</h3>
+      {% for c in contacts %}
+        <div class="contact-item">
+          <strong>{{ c['name'] }}</strong> · {{ c['phone'] }}<br>
+          <small>{{ c['created_at'] }}</small>
+          <div>{{ c['message'] }}</div>
+        </div>
+      {% else %}
+        <p>No messages yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
