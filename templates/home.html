@@ -57,6 +57,7 @@
     <p style="margin-top:10px;font-weight:600;">Limited slots available</p>
   </div>
 </section>
+
 <!-- PROGRAMS SECTION -->
 <section class="programs container card" style="margin-top:50px; text-align:center;">
   <h2 style="color:#23303B; font-size:2em; font-weight:800;">Our Programs</h2>
@@ -98,6 +99,24 @@
 <!-- Add this in <head> if not already present -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
+<!-- TRANSPORT SECTION -->
+<section class="transport container card" style="margin-top:40px; text-align:center;">
+  <h2 style="color:#23303B;">Safe School Transport</h2>
+  <p style="max-width:650px; margin:auto; font-size:1.1em;">
+    We offer reliable pickup and drop-off services for nearby estates and neighborhoods, ensuring every child arrives safely and comfortably every day.
+  </p>
+
+  <div class="transport-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:20px;">
+    <div class="transport-photo">
+      <img src="{{ url_for('static', filename='uploads/transport1.jpg') }}" alt="School transport van" loading="lazy" style="width:100%;border-radius:16px;">
+    </div>
+    <div class="transport-photo">
+      <img src="{{ url_for('static', filename='uploads/transport2.jpg') }}" alt="School bus" loading="lazy" style="width:100%;border-radius:16px;">
+    </div>
+  </div>
+
+  <p style="margin-top:12px; color:#555; font-weight:600;">Available for Juja and nearby areas</p>
+</section>
 
 <!-- LOCATION SECTION -->
 <section class="location container" style="margin-top:40px; text-align:center;">
