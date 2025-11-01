@@ -59,6 +59,11 @@ def gallery():
         images=images,
         title='Our Gallery | Jevicarn Christian Daycare & School'
     )
+#---PROGRAMS PAGE ---
+@app.route("/programs")
+def programs():
+    return render_template("programs.html", title="Programs", description="Programs offered at Jevicarn Christian Kindergarten & School", keywords="daycare, kindergarten, primary school, nightcare, Jevicarn, Juja")
+
 
 # --- CONTACT PAGE ---
 @app.route('/contact', methods=['GET', 'POST'])
