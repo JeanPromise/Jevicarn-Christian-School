@@ -99,7 +99,6 @@ def contact():
     return render_template('contact.html', messages_list=messages_list)
 
 # --- ADMIN PAGE ---
-# --- ADMIN PAGE ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -125,14 +124,20 @@ def admin():
 
     chat_messages = []
     if sender:
-        # Mark all unseen messages from user as seen
+        # Mark unseen messages from this sender as seen
         c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
         conn.commit()
 
-        # Fetch conversation
-        c.execute('SELECT sender, text, filename, seen FROM messages WHERE sender=? OR sender="admin" ORDER BY id ASC', (sender,))
+        # Fetch full chat conversation
+        c.execute('SELECT sender, text, filename, seen, timestamp FROM messages WHERE sender=? OR sender="admin" ORDER BY id ASC', (sender,))
         chat_messages = [
-            {'sender': r[0], 'text': r[1], 'filename': r[2], 'seen': bool(r[3])}
+            {
+                'sender': r[0],
+                'text': r[1],
+                'filename': r[2],
+                'seen': bool(r[3]),
+                'timestamp': r[4]
+            }
             for r in c.fetchall()
         ]
 
@@ -147,6 +152,7 @@ def uploaded_file(filename):
     return send_from_directory('static/uploads', filename)
 
 
+# --- ADMIN REPLY ROUTE ---
 @app.route('/admin/reply/<sender>', methods=['POST'])
 def admin_reply(sender):
     auth = request.args.get('auth')
@@ -156,13 +162,16 @@ def admin_reply(sender):
     text = request.form.get('text', '').strip()
     if text:
         conn = sqlite3.connect('contacts.db')
-        conn.execute(
+        c = conn.cursor()
+        c.execute(
             'INSERT INTO messages (sender, text, seen) VALUES (?, ?, ?)',
             ('admin', text, 1)
         )
         conn.commit()
         conn.close()
+
     return redirect(url_for('admin', sender=sender, auth=auth))
+
 
 # --- KEEP-ALIVE ENDPOINT ---
 @app.route('/keepalive-ping')
