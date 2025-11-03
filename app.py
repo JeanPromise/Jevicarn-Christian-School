@@ -17,24 +17,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # --- DATABASE SETUP ---
 def init_db():
     conn = sqlite3.connect(DB_FILE)
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS visitors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip TEXT,
-            source TEXT,
-            page TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def log_visit(source=None):
-    conn = sqlite3.connect(DB_FILE)
-    page = request.path
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    ref = source or request.args.get('from', 'direct')
-    conn.execute('INSERT INTO visitors (ip, source, page) VALUES (?, ?, ?)', (ip, ref, page))
+    conn.execute('CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, name TEXT, email TEXT, message TEXT)')
     conn.commit()
     conn.close()
 
@@ -43,7 +26,6 @@ def log_visit(source=None):
 @app.route('/home')
 @app.route('/index.html')
 def home():
-    log_visit('home')
     images = []
     if os.path.exists(UPLOAD_FOLDER):
         images = [img for img in os.listdir(UPLOAD_FOLDER)
@@ -67,23 +49,22 @@ def home():
 # --- GALLERY PAGE ---
 @app.route('/gallery')
 def gallery():
-    log_visit('gallery')
     image_folder = os.path.join(app.static_folder, 'gallery')
     images = []
     if os.path.exists(image_folder):
         images = [f'gallery/{img}' for img in os.listdir(image_folder)
                   if img.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+
     return render_template(
         'gallery.html',
         images=images,
         title='Our Gallery | Jevicarn Christian Daycare & School'
     )
-
-# --- PROGRAMS PAGE ---
+#---PROGRAMS PAGE ---
 @app.route("/programs")
 def programs():
-    log_visit('programs')
     return render_template("programs.html", title="Programs", description="Programs offered at Jevicarn Christian Kindergarten & School", keywords="daycare, kindergarten, primary school, nightcare, Jevicarn, Juja")
+
 
 # --- CONTACT PAGE ---
 @app.route('/contact', methods=['GET', 'POST'])
@@ -106,17 +87,18 @@ def contact():
             filename = file.filename
             file.save(os.path.join('static/uploads', filename))
         if text or filename:
-            c.execute('INSERT INTO messages (sender, text, filename) VALUES (?, ?, ?)',
+            c.execute('INSERT INTO messages (sender, text, filename) VALUES (?, ?, ?)', 
                       ('user', text, filename))
             conn.commit()
         return redirect(url_for('contact'))
 
+    # Fetch all messages (user + admin)
     c.execute('SELECT sender, text, filename, seen FROM messages ORDER BY id ASC')
     messages_list = [{'sender': row[0], 'text': row[1], 'filename': row[2], 'seen': bool(row[3])} for row in c.fetchall()]
     conn.close()
     return render_template('contact.html', messages_list=messages_list)
 
-# --- ADMIN PAGE ---
+# --- ADMIN PAGE (AUTO REFRESH + FULL CHAT FIX) ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -124,6 +106,7 @@ def admin():
         return "Unauthorized", 403
 
     sender = request.args.get('sender')
+
     conn = sqlite3.connect('contacts.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS messages (
@@ -136,39 +119,53 @@ def admin():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Distinct senders
+    # Get all distinct user senders (exclude admin)
     c.execute('SELECT DISTINCT sender FROM messages WHERE sender != "admin"')
     senders = [row[0] for row in c.fetchall()]
 
-    # View visitor details (new)
-    c.execute('SELECT ip, source, page, timestamp FROM visitors ORDER BY id DESC LIMIT 20')
-    visitors = [{'ip': r[0], 'source': r[1], 'page': r[2], 'timestamp': r[3]} for r in c.fetchall()]
-
     chat_messages = []
     if sender:
+        # Mark unseen messages from this sender as seen
         c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
         conn.commit()
+
+        # Fetch full conversation (sender <-> admin)
         c.execute('''
             SELECT sender, text, filename, seen, timestamp
             FROM messages
             WHERE (sender=? AND receiver="admin") OR (sender="admin" AND receiver=?)
             ORDER BY id ASC
         ''', (sender, sender))
+
         chat_messages = [
-            {'sender': r[0], 'text': r[1], 'filename': r[2], 'seen': bool(r[3]), 'timestamp': r[4]}
-            for r in c.fetchall()
+            {
+                'sender': row[0],
+                'text': row[1],
+                'filename': row[2],
+                'seen': bool(row[3]),
+                'timestamp': row[4]
+            }
+            for row in c.fetchall()
         ]
+
     conn.close()
 
-    return render_template('admin.html', senders=senders, chat_messages=chat_messages,
-                           active_sender=sender, visitors=visitors, auth=auth)
+    return render_template(
+        'admin.html',
+        senders=senders,
+        chat_messages=chat_messages,
+        active_sender=sender,
+        auth=auth
+    )
 
-# --- FILE DOWNLOAD ---
+
+# --- FILE DOWNLOAD / VIEW ROUTE ---
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory('static/uploads', filename)
 
-# --- ADMIN REPLY ---
+
+# --- ADMIN REPLY ROUTE ---
 @app.route('/admin/reply/<sender>', methods=['POST'])
 def admin_reply(sender):
     auth = request.args.get('auth')
@@ -179,22 +176,29 @@ def admin_reply(sender):
     if text:
         conn = sqlite3.connect('contacts.db')
         c = conn.cursor()
-        c.execute('INSERT INTO messages (sender, receiver, text, seen) VALUES (?, ?, ?, ?)',
-                  ('admin', sender, text, 1))
+        c.execute('''
+            INSERT INTO messages (sender, receiver, text, seen)
+            VALUES (?, ?, ?, ?)
+        ''', ('admin', sender, text, 1))
         conn.commit()
         conn.close()
+
     return redirect(url_for('admin', sender=sender, auth=auth))
 
-# --- KEEP ALIVE ---
+
+
+# --- KEEP-ALIVE ENDPOINT ---
 @app.route('/keepalive-ping')
 def keepalive_ping():
     return "pong"
 
+# --- KEEP-ALIVE THREAD (prevents Render/Fly.io sleeping) ---
 def keep_alive():
     url = os.getenv('KEEP_ALIVE_URL')
     if not url:
         print("⚠️ No KEEP_ALIVE_URL set; skipping keep-alive thread.")
         return
+
     print("🟢 Keep-alive service started, pinging every 25 seconds.")
     while True:
         try:
@@ -204,8 +208,10 @@ def keep_alive():
             print(f"⚠️ Keep-alive error: {e}")
         time.sleep(25)
 
+# --- MAIN APP ENTRY ---
 if __name__ == '__main__':
     init_db()
     if os.getenv('ENABLE_KEEP_ALIVE', '1') == '1':
         Thread(target=keep_alive, daemon=True).start()
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+
