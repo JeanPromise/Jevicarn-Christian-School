@@ -1,23 +1,152 @@
 {% extends 'base.html' %}
 {% block content %}
-  <section class="container contact-card card">
-    <h1>Book a Visit / Contact</h1>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="flash">{{ messages[0] }}</div>
-      {% endif %}
-    {% endwith %}
+<style>
+  body {
+    background: linear-gradient(180deg, #d9f2ff 0%, #b3e5fc 100%);
+  }
 
-    <form method="post">
-      <label>Name</label>
-      <input name="name" required>
-      <label>Phone / WhatsApp</label>
-      <input name="phone" required>
-      <label>Email (optional)</label>
-      <input name="email">
-      <label>Message</label>
-      <textarea name="message" rows="4"></textarea>
-      <div style="margin-top:12px"><button class="btn btn-primary">Send Request</button></div>
-    </form>
-  </section>
+  .chat-container {
+    max-width: 700px;
+    margin: 30px auto;
+    background: #f2faff;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+  }
+
+  .chat-header {
+    background-color: #0288d1;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    font-weight: bold;
+  }
+
+  .chat-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: #e1f5fe;
+  }
+
+  .message {
+    max-width: 75%;
+    margin: 10px 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    position: relative;
+    font-size: 0.95rem;
+  }
+
+  .user-msg {
+    background-color: #0288d1;
+    color: #fff;
+    align-self: flex-end;
+    margin-left: auto;
+  }
+
+  .admin-msg {
+    background-color: #0d47a1;
+    color: #fff;
+    align-self: flex-start;
+  }
+
+  .status {
+    font-size: 0.8rem;
+    margin-top: 2px;
+    text-align: right;
+    color: #fff8;
+  }
+
+  .chat-input-area {
+    padding: 12px;
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chat-input-area input[type="text"],
+  .chat-input-area textarea {
+    flex: 1;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    padding: 8px 14px;
+    resize: none;
+    outline: none;
+  }
+
+  .chat-input-area input[type="file"] {
+    display: none;
+  }
+
+  .attach-label {
+    background-color: #0288d1;
+    color: white;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .send-btn {
+    background-color: #0288d1;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .send-btn:hover {
+    background-color: #0277bd;
+  }
+
+</style>
+
+<section class="chat-container">
+  <div class="chat-header">
+    💬 Contact Jevicarn Christian Kindergarten & School
+  </div>
+
+  <div class="chat-box" id="chatBox">
+    {% if messages_list %}
+      {% for msg in messages_list %}
+        <div class="message {{ 'user-msg' if msg.sender == 'user' else 'admin-msg' }}">
+          {{ msg.text }}
+          {% if msg.filename %}
+            <div><a href="{{ url_for('uploaded_file', filename=msg.filename) }}" target="_blank" style="color:#fff;text-decoration:underline;">📎 Attachment</a></div>
+          {% endif %}
+          <div class="status">
+            {% if msg.seen %}
+              Seen
+            {% else %}
+              ✓ Sent
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center; color:#555;">Start a conversation below 👇</div>
+    {% endif %}
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" class="chat-input-area">
+    <label for="fileInput" class="attach-label" title="Attach file">📎</label>
+    <input type="file" id="fileInput" name="file">
+    <input type="text" name="text" placeholder="Type a message..." required>
+    <button class="send-btn" title="Send">📤</button>
+  </form>
+</section>
 {% endblock %}
