@@ -99,20 +99,6 @@ def contact():
     return render_template('contact.html', messages_list=messages_list)
 
 # --- ADMIN PAGE ---
-@app.route('/admin')
-def admin():
-    auth = request.args.get('auth')
-    if auth != os.getenv('ADMIN_PASS', 'admin123'):
-        return "Unauthorized", 403
-    conn = sqlite3.connect(DB_FILE)
-    contacts = conn.execute('SELECT * FROM contacts').fetchall()
-    conn.close()
-    return render_template('admin.html', contacts=contacts, title='Admin Panel')
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory('static/uploads', filename)
-
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -124,7 +110,10 @@ def admin():
     conn = sqlite3.connect('contacts.db')
     c = conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT, text TEXT, filename TEXT, seen INTEGER DEFAULT 0, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)')
-    
+    @app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory('static/uploads', filename)
+
     # List of all unique senders
     c.execute('SELECT DISTINCT sender FROM messages')
     senders = [row[0] for row in c.fetchall()]
