@@ -1,67 +1,98 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
+<section class="programs py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center mb-5 fw-bold">Our Programs</h2>
 
-<!-- PROGRAMS HERO -->
-<section class="hero container card" style="text-align:center; padding:60px 20px; background:linear-gradient(180deg,#fff9ed,#fff);">
-  <h1 style="font-size:2.4em; color:#23303B; font-weight:800;">Our Programs</h1>
-  <p style="max-width:700px; margin:auto; font-size:1.1em; color:#555;">
-    From early care to primary education — we nurture children to learn, grow, and shine in faith and knowledge.
-  </p>
-</section>
+    <!-- Early Childhood -->
+    <div class="mb-5">
+      <h3 class="text-primary fw-semibold mb-3">Early Childhood Programs</h3>
+      <div class="row g-4">
+        <!-- Daycare -->
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <img src="{{ url_for('static', filename='images/daycare.jpg') }}" class="card-img-top" alt="Daycare">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">Daycare</h5>
+              <p class="card-text">Ages 6 months – 3 years<br>
+              A nurturing environment where babies and toddlers receive attentive care and playful learning experiences.</p>
+            </div>
+          </div>
+        </div>
 
-<!-- PROGRAM DETAILS -->
-<section class="programs container card" style="margin-top:40px;">
-  <div class="programs-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;">
-    
-    <div class="program-box">
-      <i class="fa-solid fa-baby icon" style="font-size:2em;color:#ff7b00;"></i>
-      <h3>Daycare</h3>
-      <p>For ages 1–3 years. Gentle introduction to learning through play, songs, and caring supervision.</p>
+        <!-- Nightcare -->
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <img src="{{ url_for('static', filename='images/nightcare.jpg') }}" class="card-img-top" alt="Nightcare">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">Nightcare</h5>
+              <p class="card-text">Ages 6 months – 6 years<br>
+              Safe, comfortable overnight care for children whose parents work night shifts or travel frequently.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="program-box">
-      <i class="fa-solid fa-school icon" style="font-size:2em;color:#ff7b00;"></i>
-      <h3>Kindergarten</h3>
-      <p>For ages 3–6 years. A strong start in phonics, counting, creativity, and Christian values.</p>
+    <!-- Pre-Primary -->
+    <div class="mb-5">
+      <h3 class="text-primary fw-semibold mb-3">Pre-Primary Programs</h3>
+      <div class="row g-4">
+        <!-- Playgroup -->
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <img src="{{ url_for('static', filename='images/playgroup.jpg') }}" class="card-img-top" alt="Playgroup">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">Playgroup</h5>
+              <p class="card-text">Ages 3 – 4 years<br>
+              The first step into structured learning through music, art, and play-based exploration.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PP1 -->
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <img src="{{ url_for('static', filename='images/pp1.jpg') }}" class="card-img-top" alt="PP1">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">Pre-Primary 1 (PP1)</h5>
+              <p class="card-text">Ages 4 – 5 years<br>
+              Focus on curiosity, early numeracy, literacy, and social development through engaging lessons.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PP2 -->
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <img src="{{ url_for('static', filename='images/pp2.jpg') }}" class="card-img-top" alt="PP2">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">Pre-Primary 2 (PP2)</h5>
+              <p class="card-text">Ages 5 – 6 years<br>
+              Builds readiness for Grade 1 with language fluency, number work, and moral lessons.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="program-box">
-      <i class="fa-solid fa-book icon" style="font-size:2em;color:#ff7b00;"></i>
-      <h3>Primary School</h3>
-      <p>Competency-based curriculum (CBC) with emphasis on reading, science, and practical skills.</p>
-    </div>
-
-    <div class="program-box">
-      <i class="fa-solid fa-moon icon" style="font-size:2em;color:#ff7b00;"></i>
-      <h3>Nightcare</h3>
-      <p>Overnight care in a safe, restful setting. For working parents who need reliable evening support.</p>
+    <!-- Lower Primary -->
+    <div class="mb-5">
+      <h3 class="text-primary fw-semibold mb-3">Lower Primary</h3>
+      <div class="row g-4">
+        <!-- Grade 1 -->
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm border-0 h-100">
+            <img src="{{ url_for('static', filename='images/grade1.jpg') }}" class="card-img-top" alt="Grade 1">
+            <div class="card-body">
+              <h5 class="card-title fw-bold">Grade 1</h5>
+              <p class="card-text">Ages 6 – 7 years<br>
+              The start of formal schooling under the CBC system — developing literacy, numeracy, and creativity.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
-
-<!-- TRANSPORT SECTION -->
-<section class="transport container card" style="margin-top:50px; text-align:center;">
-  <h2 style="color:#23303B;">Safe & Reliable Transport</h2>
-  <p style="max-width:650px; margin:auto; font-size:1.05em;">
-    Our school vans ensure children travel safely and comfortably between home and school.
-  </p>
-
-  <div class="transport-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:25px;">
-    <div class="transport-photo">
-      <img src="{{ url_for('static', filename='uploads/transport1.jpg') }}" alt="School van" loading="lazy" style="width:100%;border-radius:16px;">
-    </div>
-    <div class="transport-photo">
-      <img src="{{ url_for('static', filename='uploads/transport2.jpg') }}" alt="Yellow school van" loading="lazy" style="width:100%;border-radius:16px;">
-    </div>
-  </div>
-  <p style="margin-top:12px; color:#555;">Serving Juja, Ruiru, and nearby estates.</p>
-</section>
-
-<!-- CTA -->
-<section class="cta container card" style="margin-top:50px; text-align:center; background:#fff8ec;">
-  <h2 style="color:#ff7b00;">Ready to Join?</h2>
-  <p style="max-width:650px; margin:auto; font-size:1.1em;">Book a visit or speak with us today about your child’s admission.</p>
-  <a href="/contact" class="btn btn-primary large" style="margin-top:12px;">Contact Us</a>
-</section>
-
 {% endblock %}
