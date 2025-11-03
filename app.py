@@ -100,20 +100,17 @@ def contact():
     conn.close()
     return render_template('contact.html', messages_list=messages_list)
 
-# --- ADMIN PAGE (AUTO REFRESH + FULL CHAT FIX) ---
-# --- ADMIN PAGE (AUTO FIX + LOCATION + PLATFORM READY) ---
+# --- ADMIN ANALYTICS DASHBOARD (NEW CLEAN VERSION) ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
     if auth != os.getenv('ADMIN_PASS', 'admin123'):
         return "Unauthorized", 403
 
-    sender = request.args.get('sender')
-
     conn = sqlite3.connect('contacts.db')
     c = conn.cursor()
 
-    # Ensure messages table exists and has all columns
+    # Ensure messages table exists and has required columns
     c.execute('''CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sender TEXT,
@@ -126,7 +123,7 @@ def admin():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Check existing columns and patch missing ones safely
+    # Patch missing columns if any
     c.execute('PRAGMA table_info(messages)')
     cols = [col[1] for col in c.fetchall()]
     for missing in ['receiver', 'location', 'platform']:
@@ -135,46 +132,44 @@ def admin():
                 c.execute(f'ALTER TABLE messages ADD COLUMN {missing} TEXT;')
                 conn.commit()
             except:
-                pass  # Column might already exist due to concurrency
+                pass
 
-    # Get all distinct senders except admin
-    c.execute('SELECT DISTINCT sender FROM messages WHERE sender != "admin"')
-    senders = [row[0] for row in c.fetchall()]
+    # Fetch summarized analytics
+    c.execute('SELECT COUNT(*) FROM messages')
+    total_msgs = c.fetchone()[0] or 0
 
-    chat_messages = []
-    if sender:
-        # Mark unseen messages as seen
-        c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
-        conn.commit()
+    c.execute('SELECT COUNT(DISTINCT sender) FROM messages WHERE sender != "admin"')
+    total_users = c.fetchone()[0] or 0
 
-        # Fetch conversation (admin <-> sender)
-        c.execute('''
-            SELECT sender, text, filename, seen, timestamp, location, platform
-            FROM messages
-            WHERE (sender=? AND receiver="admin") OR (sender="admin" AND receiver=?)
-            ORDER BY id ASC
-        ''', (sender, sender))
-        chat_messages = [
-            {
-                'sender': row[0],
-                'text': row[1],
-                'filename': row[2],
-                'seen': bool(row[3]),
-                'timestamp': row[4],
-                'location': row[5],
-                'platform': row[6]
-            }
-            for row in c.fetchall()
-        ]
+    # Group by location
+    c.execute('SELECT location, COUNT(*) FROM messages WHERE location IS NOT NULL GROUP BY location')
+    location_data = c.fetchall()
+
+    # Group by platform
+    c.execute('SELECT platform, COUNT(*) FROM messages WHERE platform IS NOT NULL GROUP BY platform')
+    platform_data = c.fetchall()
+
+    # Top 5 most active senders
+    c.execute('SELECT sender, COUNT(*) as count FROM messages WHERE sender != "admin" GROUP BY sender ORDER BY count DESC LIMIT 5')
+    top_senders = c.fetchall()
 
     conn.close()
 
+    # Prepare data for charts
+    locations = [row[0] for row in location_data if row[0]]
+    location_counts = [row[1] for row in location_data if row[0]]
+    platforms = [row[0] for row in platform_data if row[0]]
+    platform_counts = [row[1] for row in platform_data if row[0]]
+
     return render_template(
         'admin.html',
-        senders=senders,
-        chat_messages=chat_messages,
-        active_sender=sender,
-        auth=auth
+        total_msgs=total_msgs,
+        total_users=total_users,
+        top_senders=top_senders,
+        locations=locations,
+        location_counts=location_counts,
+        platforms=platforms,
+        platform_counts=platform_counts
     )
 
 
@@ -182,31 +177,6 @@ def admin():
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory('static/uploads', filename)
-
-
-# --- ADMIN REPLY ROUTE ---
-@app.route('/admin/reply/<sender>', methods=['POST'])
-def admin_reply(sender):
-    auth = request.args.get('auth')
-    if auth != os.getenv('ADMIN_PASS', 'admin123'):
-        return "Unauthorized", 403
-
-    text = request.form.get('text', '').strip()
-    if text:
-        conn = sqlite3.connect('contacts.db')
-        c = conn.cursor()
-        # Send admin message, future-proof for location/platform
-        c.execute('''
-            INSERT INTO messages (sender, receiver, text, seen, location, platform)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', ('admin', sender, text, 1, 'Admin Office', 'System'))
-        conn.commit()
-        conn.close()
-
-    return redirect(url_for('admin', sender=sender, auth=auth))
-
-
-
 
 # --- KEEP-ALIVE ENDPOINT ---
 @app.route('/keepalive-ping')
