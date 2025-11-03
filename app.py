@@ -1,3 +1,5 @@
+
+
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask import send_from_directory
 import os
@@ -99,6 +101,7 @@ def contact():
     return render_template('contact.html', messages_list=messages_list)
 
 # --- ADMIN PAGE (AUTO REFRESH + FULL CHAT FIX) ---
+# --- ADMIN PAGE (AUTO FIX + LOCATION + PLATFORM READY) ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -109,6 +112,8 @@ def admin():
 
     conn = sqlite3.connect('contacts.db')
     c = conn.cursor()
+
+    # Ensure messages table exists and has all columns
     c.execute('''CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sender TEXT,
@@ -116,34 +121,48 @@ def admin():
         text TEXT,
         filename TEXT,
         seen INTEGER DEFAULT 0,
+        location TEXT,
+        platform TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # Get all distinct user senders (exclude admin)
+    # Check existing columns and patch missing ones safely
+    c.execute('PRAGMA table_info(messages)')
+    cols = [col[1] for col in c.fetchall()]
+    for missing in ['receiver', 'location', 'platform']:
+        if missing not in cols:
+            try:
+                c.execute(f'ALTER TABLE messages ADD COLUMN {missing} TEXT;')
+                conn.commit()
+            except:
+                pass  # Column might already exist due to concurrency
+
+    # Get all distinct senders except admin
     c.execute('SELECT DISTINCT sender FROM messages WHERE sender != "admin"')
     senders = [row[0] for row in c.fetchall()]
 
     chat_messages = []
     if sender:
-        # Mark unseen messages from this sender as seen
+        # Mark unseen messages as seen
         c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
         conn.commit()
 
-        # Fetch full conversation (sender <-> admin)
+        # Fetch conversation (admin <-> sender)
         c.execute('''
-            SELECT sender, text, filename, seen, timestamp
+            SELECT sender, text, filename, seen, timestamp, location, platform
             FROM messages
             WHERE (sender=? AND receiver="admin") OR (sender="admin" AND receiver=?)
             ORDER BY id ASC
         ''', (sender, sender))
-
         chat_messages = [
             {
                 'sender': row[0],
                 'text': row[1],
                 'filename': row[2],
                 'seen': bool(row[3]),
-                'timestamp': row[4]
+                'timestamp': row[4],
+                'location': row[5],
+                'platform': row[6]
             }
             for row in c.fetchall()
         ]
@@ -176,14 +195,16 @@ def admin_reply(sender):
     if text:
         conn = sqlite3.connect('contacts.db')
         c = conn.cursor()
+        # Send admin message, future-proof for location/platform
         c.execute('''
-            INSERT INTO messages (sender, receiver, text, seen)
-            VALUES (?, ?, ?, ?)
-        ''', ('admin', sender, text, 1))
+            INSERT INTO messages (sender, receiver, text, seen, location, platform)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', ('admin', sender, text, 1, 'Admin Office', 'System'))
         conn.commit()
         conn.close()
 
     return redirect(url_for('admin', sender=sender, auth=auth))
+
 
 
 
