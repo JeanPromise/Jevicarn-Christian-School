@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-  body {
-    background-color: #f0f8ff;
-  }
+  body { background-color: #f0f8ff; }
 
   .admin-container {
     max-width: 950px;
@@ -41,13 +39,8 @@
     cursor: pointer;
   }
 
-  .chat-list-item:hover {
-    background-color: #bbdefb;
-  }
-
-  .chat-list-item.active {
-    background-color: #90caf9;
-  }
+  .chat-list-item:hover { background-color: #bbdefb; }
+  .chat-list-item.active { background-color: #90caf9; }
 
   .chat-box {
     flex: 1;
@@ -125,9 +118,7 @@
     font-size: 1.2rem;
   }
 
-  .reply-form button:hover {
-    background-color: #08306b;
-  }
+  .reply-form button:hover { background-color: #08306b; }
 </style>
 
 <section class="admin-container">
@@ -140,7 +131,8 @@
     <div class="chat-list">
       {% for sender in senders %}
         <div class="chat-list-item {% if sender == active_sender %}active{% endif %}">
-          <a href="{{ url_for('admin', auth=request.args.get('auth'), sender=sender) }}" style="text-decoration:none; color:black;">
+          <a href="{{ url_for('admin', auth=request.args.get('auth'), sender=sender) }}"
+             style="text-decoration:none; color:black;">
             {{ sender }}
           </a>
         </div>
@@ -153,12 +145,16 @@
     <div class="chat-box">
       <div class="messages">
         {% for msg in chat_messages %}
-          <div class="message {{ 'user-msg' if msg.sender == 'user' else 'admin-msg' }}">
+          <div class="message {{ 'user-msg' if msg.sender != 'admin' else 'admin-msg' }}">
             {% if msg.text %}
               <div>{{ msg.text }}</div>
             {% endif %}
             {% if msg.filename %}
-              <div><a href="{{ url_for('uploaded_file', filename=msg.filename) }}" target="_blank" style="color:#fff;text-decoration:underline;">📎 Attachment</a></div>
+              <div>
+                <a href="{{ url_for('uploaded_file', filename=msg.filename) }}"
+                   target="_blank"
+                   style="color:#fff;text-decoration:underline;">📎 Attachment</a>
+              </div>
             {% endif %}
             <div class="status">{{ 'Seen' if msg.seen else '✓ Sent' }}</div>
             <div class="timestamp">{{ msg.timestamp }}</div>
@@ -169,7 +165,9 @@
       </div>
 
       {% if active_sender %}
-      <form method="POST" action="{{ url_for('admin_reply', sender=active_sender) }}?auth={{ request.args.get('auth','') }}" class="reply-form">
+      <form method="POST"
+            action="{{ url_for('admin_reply', sender=active_sender) }}?auth={{ request.args.get('auth','') }}"
+            class="reply-form">
         <input type="text" name="text" placeholder="Type your reply..." required>
         <button title="Send Reply">📤</button>
       </form>
@@ -177,4 +175,39 @@
     </div>
   </div>
 </section>
+
+<script>
+  const senderActive = "{{ active_sender }}";
+  const authKey = "{{ request.args.get('auth', '') }}";
+  const messagesBox = document.querySelector('.messages');
+  let lastCount = document.querySelectorAll('.message').length;
+
+  function scrollToBottom() {
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  }
+  scrollToBottom();
+
+  if (senderActive) {
+    setInterval(() => {
+      fetch(`/admin?auth=${authKey}&sender=${senderActive}`)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const newDoc = parser.parseFromString(html, "text/html");
+          const newMessages = newDoc.querySelector('.messages');
+          const newCount = newMessages.querySelectorAll('.message').length;
+
+          if (newCount > lastCount) {
+            const audio = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3fdd2a153b.mp3?filename=ding-36029.mp3");
+            audio.play();
+          }
+
+          lastCount = newCount;
+          messagesBox.innerHTML = newMessages.innerHTML;
+          scrollToBottom();
+        })
+        .catch(err => console.error("Auto-refresh failed:", err));
+    }, 6000);
+  }
+</script>
 {% endblock %}
