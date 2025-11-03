@@ -98,7 +98,7 @@ def contact():
     conn.close()
     return render_template('contact.html', messages_list=messages_list)
 
-# --- ADMIN PAGE (AUTO REFRESH) ---
+# --- ADMIN PAGE (AUTO REFRESH + FULL CHAT FIX) ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -112,6 +112,7 @@ def admin():
     c.execute('''CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sender TEXT,
+        receiver TEXT,
         text TEXT,
         filename TEXT,
         seen INTEGER DEFAULT 0,
@@ -128,26 +129,34 @@ def admin():
         c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
         conn.commit()
 
-        # Fetch full conversation between sender and admin
-        c.execute('SELECT sender, text, filename, seen, timestamp FROM messages WHERE sender=? OR sender="admin" ORDER BY id ASC', (sender,))
+        # Fetch full conversation (sender <-> admin)
+        c.execute('''
+            SELECT sender, text, filename, seen, timestamp
+            FROM messages
+            WHERE (sender=? AND receiver="admin") OR (sender="admin" AND receiver=?)
+            ORDER BY id ASC
+        ''', (sender, sender))
+
         chat_messages = [
             {
-                'sender': r[0],
-                'text': r[1],
-                'filename': r[2],
-                'seen': bool(r[3]),
-                'timestamp': r[4]
+                'sender': row[0],
+                'text': row[1],
+                'filename': row[2],
+                'seen': bool(row[3]),
+                'timestamp': row[4]
             }
-            for r in c.fetchall()
+            for row in c.fetchall()
         ]
 
     conn.close()
 
-    return render_template('admin.html',
-                           senders=senders,
-                           chat_messages=chat_messages,
-                           active_sender=sender,
-                           auth=auth)
+    return render_template(
+        'admin.html',
+        senders=senders,
+        chat_messages=chat_messages,
+        active_sender=sender,
+        auth=auth
+    )
 
 
 # --- FILE DOWNLOAD / VIEW ROUTE ---
@@ -167,10 +176,10 @@ def admin_reply(sender):
     if text:
         conn = sqlite3.connect('contacts.db')
         c = conn.cursor()
-        c.execute(
-            'INSERT INTO messages (sender, text, seen) VALUES (?, ?, ?)',
-            ('admin', text, 1)
-        )
+        c.execute('''
+            INSERT INTO messages (sender, receiver, text, seen)
+            VALUES (?, ?, ?, ?)
+        ''', ('admin', sender, text, 1))
         conn.commit()
         conn.close()
 
