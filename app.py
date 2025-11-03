@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import send_from_directory
 import os
 import sqlite3
 from threading import Thread
@@ -107,6 +108,54 @@ def admin():
     contacts = conn.execute('SELECT * FROM contacts').fetchall()
     conn.close()
     return render_template('admin.html', contacts=contacts, title='Admin Panel')
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory('static/uploads', filename)
+
+@app.route('/admin', methods=['GET'])
+def admin():
+    auth = request.args.get('auth')
+    if auth != os.getenv('ADMIN_PASS', 'admin123'):
+        return "Unauthorized", 403
+
+    sender = request.args.get('sender')
+
+    conn = sqlite3.connect('contacts.db')
+    c = conn.cursor()
+    c.execute('CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT, text TEXT, filename TEXT, seen INTEGER DEFAULT 0, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)')
+    
+    # List of all unique senders
+    c.execute('SELECT DISTINCT sender FROM messages')
+    senders = [row[0] for row in c.fetchall()]
+
+    chat_messages = []
+    if sender:
+        # Mark all unseen messages from user as seen
+        c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
+        conn.commit()
+
+        # Fetch conversation
+        c.execute('SELECT sender, text, filename, seen FROM messages WHERE sender=? OR sender="admin" ORDER BY id ASC', (sender,))
+        chat_messages = [{'sender': r[0], 'text': r[1], 'filename': r[2], 'seen': bool(r[3])} for r in c.fetchall()]
+
+    conn.close()
+
+    return render_template('admin.html', senders=senders, chat_messages=chat_messages, active_sender=sender)
+
+@app.route('/admin/reply/<sender>', methods=['POST'])
+def admin_reply(sender):
+    auth = request.args.get('auth')
+    if auth != os.getenv('ADMIN_PASS', 'admin123'):
+        return "Unauthorized", 403
+
+    text = request.form.get('text', '').strip()
+    if text:
+        conn = sqlite3.connect('contacts.db')
+        conn.execute('INSERT INTO messages (sender, text, seen) VALUES (?, ?, ?)', ('admin', text, 1))
+        conn.commit()
+        conn.close()
+    return redirect(url_for('admin', sender=sender, auth=auth))
 
 # --- KEEP-ALIVE ENDPOINT ---
 @app.route('/keepalive-ping')
