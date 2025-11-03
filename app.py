@@ -99,6 +99,7 @@ def contact():
     return render_template('contact.html', messages_list=messages_list)
 
 # --- ADMIN PAGE ---
+# --- ADMIN PAGE ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -109,10 +110,14 @@ def admin():
 
     conn = sqlite3.connect('contacts.db')
     c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT, text TEXT, filename TEXT, seen INTEGER DEFAULT 0, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)')
-    @app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory('static/uploads', filename)
+    c.execute('''CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender TEXT,
+        text TEXT,
+        filename TEXT,
+        seen INTEGER DEFAULT 0,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
 
     # List of all unique senders
     c.execute('SELECT DISTINCT sender FROM messages')
@@ -126,11 +131,21 @@ def uploaded_file(filename):
 
         # Fetch conversation
         c.execute('SELECT sender, text, filename, seen FROM messages WHERE sender=? OR sender="admin" ORDER BY id ASC', (sender,))
-        chat_messages = [{'sender': r[0], 'text': r[1], 'filename': r[2], 'seen': bool(r[3])} for r in c.fetchall()]
+        chat_messages = [
+            {'sender': r[0], 'text': r[1], 'filename': r[2], 'seen': bool(r[3])}
+            for r in c.fetchall()
+        ]
 
     conn.close()
 
     return render_template('admin.html', senders=senders, chat_messages=chat_messages, active_sender=sender)
+
+
+# --- FILE DOWNLOAD / VIEW ROUTE ---
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory('static/uploads', filename)
+
 
 @app.route('/admin/reply/<sender>', methods=['POST'])
 def admin_reply(sender):
@@ -141,7 +156,10 @@ def admin_reply(sender):
     text = request.form.get('text', '').strip()
     if text:
         conn = sqlite3.connect('contacts.db')
-        conn.execute('INSERT INTO messages (sender, text, seen) VALUES (?, ?, ?)', ('admin', text, 1))
+        conn.execute(
+            'INSERT INTO messages (sender, text, seen) VALUES (?, ?, ?)',
+            ('admin', text, 1)
+        )
         conn.commit()
         conn.close()
     return redirect(url_for('admin', sender=sender, auth=auth))
