@@ -98,7 +98,7 @@ def contact():
     conn.close()
     return render_template('contact.html', messages_list=messages_list)
 
-# --- ADMIN PAGE ---
+# --- ADMIN PAGE (AUTO REFRESH) ---
 @app.route('/admin', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
@@ -118,8 +118,8 @@ def admin():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
-    # List of all unique senders
-    c.execute('SELECT DISTINCT sender FROM messages')
+    # Get all distinct user senders (exclude admin)
+    c.execute('SELECT DISTINCT sender FROM messages WHERE sender != "admin"')
     senders = [row[0] for row in c.fetchall()]
 
     chat_messages = []
@@ -128,7 +128,7 @@ def admin():
         c.execute('UPDATE messages SET seen=1 WHERE sender=?', (sender,))
         conn.commit()
 
-        # Fetch full chat conversation
+        # Fetch full conversation between sender and admin
         c.execute('SELECT sender, text, filename, seen, timestamp FROM messages WHERE sender=? OR sender="admin" ORDER BY id ASC', (sender,))
         chat_messages = [
             {
@@ -143,7 +143,11 @@ def admin():
 
     conn.close()
 
-    return render_template('admin.html', senders=senders, chat_messages=chat_messages, active_sender=sender)
+    return render_template('admin.html',
+                           senders=senders,
+                           chat_messages=chat_messages,
+                           active_sender=sender,
+                           auth=auth)
 
 
 # --- FILE DOWNLOAD / VIEW ROUTE ---
@@ -171,6 +175,7 @@ def admin_reply(sender):
         conn.close()
 
     return redirect(url_for('admin', sender=sender, auth=auth))
+
 
 
 # --- KEEP-ALIVE ENDPOINT ---
