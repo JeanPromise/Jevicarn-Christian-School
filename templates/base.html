@@ -61,5 +61,43 @@
       setInterval(()=>{ fetch('/keepalive-ping').catch(_=>0); }, 30000);
     })();
   </script>
+	  <!-- WhatsApp Floating Button -->
+  <a href="https://wa.me/254781857370" 
+     class="whatsapp-float" 
+     target="_blank" 
+     title="Chat with us on WhatsApp">
+    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp">
+  </a>
+
+  <style>
+    .whatsapp-float {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      bottom: 20px;
+      right: 20px;
+      background-color: #25D366;
+      color: #fff;
+      border-radius: 50%;
+      text-align: center;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+    }
+
+    .whatsapp-float img {
+      width: 32px;
+      height: 32px;
+      filter: brightness(0) invert(1);
+    }
+  </style>
+
 </body>
 </html>
