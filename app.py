@@ -68,23 +68,34 @@ def programs():
 # --- CONTACT PAGE ---
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        message = request.form.get('message', '').strip()
-        if not name or not email or not message:
-            flash('Please fill out all fields.', 'error')
-            return redirect(url_for('contact'))
+    conn = sqlite3.connect('contacts.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS messages
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  sender TEXT,
+                  text TEXT,
+                  filename TEXT,
+                  seen INTEGER DEFAULT 0,
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
 
-        conn = sqlite3.connect(DB_FILE)
-        conn.execute('INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)',
-                     (name, email, message))
-        conn.commit()
-        conn.close()
-        flash('Message sent successfully!', 'success')
+    if request.method == 'POST':
+        text = request.form.get('text', '').strip()
+        file = request.files.get('file')
+        filename = None
+        if file and file.filename:
+            filename = file.filename
+            file.save(os.path.join('static/uploads', filename))
+        if text or filename:
+            c.execute('INSERT INTO messages (sender, text, filename) VALUES (?, ?, ?)', 
+                      ('user', text, filename))
+            conn.commit()
         return redirect(url_for('contact'))
 
-    return render_template('contact.html', title='Contact Us | Jevicarn Christian School')
+    # Fetch all messages (user + admin)
+    c.execute('SELECT sender, text, filename, seen FROM messages ORDER BY id ASC')
+    messages_list = [{'sender': row[0], 'text': row[1], 'filename': row[2], 'seen': bool(row[3])} for row in c.fetchall()]
+    conn.close()
+    return render_template('contact.html', messages_list=messages_list)
 
 # --- ADMIN PAGE ---
 @app.route('/admin')
