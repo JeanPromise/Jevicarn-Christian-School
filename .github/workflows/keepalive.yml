@@ -1,0 +1,14 @@
+name: Keep Render App Awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # Runs every 10 minutes
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep Render App Awake
+        run: |
+          curl -s https://jevicarn-christian-school.onrender.com > /dev/null
