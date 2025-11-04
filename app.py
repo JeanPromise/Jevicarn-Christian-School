@@ -1,5 +1,3 @@
-
-
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask import send_from_directory
 import os
@@ -183,26 +181,30 @@ def uploaded_file(filename):
 def keepalive_ping():
     return "pong"
 
-# --- KEEP-ALIVE THREAD (prevents Render/Fly.io sleeping) ---
-def keep_alive():
-    url = os.getenv('KEEP_ALIVE_URL')
-    if not url:
-        print("⚠️ No KEEP_ALIVE_URL set; skipping keep-alive thread.")
-        return
+# --- KEEP-ALIVE ENDPOINT ---
+@app.route('/keepalive-ping')
+def keepalive_ping():
+    return "pong", 200
 
-    print("🟢 Keep-alive service started, pinging every 25 seconds.")
+
+# --- KEEP-ALIVE THREAD (optional internal pinger, every 25 sec) ---
+def keep_alive():
+    url = os.getenv('KEEP_ALIVE_URL', 'https://jevicarn-christian-school.onrender.com')
+    print("🟢 Internal keep-alive started (pinging every 25 seconds).")
+
     while True:
         try:
-            requests.get(url + '/keepalive-ping', timeout=10)
-            print("✅ Ping sent successfully.")
+            requests.get(f"{url}/keepalive-ping", timeout=10)
+            print("✅  Keep-alive ping sent.")
         except Exception as e:
-            print(f"⚠️ Keep-alive error: {e}")
+            print(f"⚠️  Keep-alive error: {e}")
         time.sleep(25)
+
 
 # --- MAIN APP ENTRY ---
 if __name__ == '__main__':
     init_db()
+    # Internal keep-alive runs only if enabled via env var
     if os.getenv('ENABLE_KEEP_ALIVE', '1') == '1':
         Thread(target=keep_alive, daemon=True).start()
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
-
