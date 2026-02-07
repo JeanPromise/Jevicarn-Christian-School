@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 app.py - Jevicarn site with one-time admin registration then login using hithere.db
-Admin dashboard now includes gallery management controls in the single admin.html template.
-Improved safe deletion of uploaded images (works on hosting where static/uploads is writable).
+Admin dashboard now includes gallery management controls and GitHub repo file management.
 """
 from flask import (
     Flask, render_template, request, redirect, url_for, flash,
@@ -19,6 +18,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import csv
 import io
+import base64
+import json
 
 # --- CONFIG ---
 app = Flask(__name__, template_folder="templates")
@@ -30,6 +31,11 @@ ADMIN_DB = 'hithere.db'       # admins DB
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_IMG_EXTS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'}
+
+# GitHub config (env)
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+GITHUB_REPO = os.getenv('GITHUB_REPO')  # "owner/repo"
+GITHUB_BRANCH = os.getenv('GITHUB_BRANCH', 'main')
 
 # --- DB helpers & initialization ---
 def get_conn(db_file):
@@ -195,7 +201,6 @@ def contact():
 # serve uploaded images from static/uploads
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    # send_from_directory will take care of safe path handling
     uploads_dir = os.path.join(app.static_folder, 'uploads')
     return send_from_directory(uploads_dir, filename)
 
@@ -492,6 +497,161 @@ def admin_gallery_delete_ajax():
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'id': item_id})
+
+# --- GitHub integration endpoints (list / delete / delete_batch / import) ---
+def gh_headers():
+    headers = {'Accept': 'application/vnd.github+json'}
+    if GITHUB_TOKEN:
+        headers['Authorization'] = f'token {GITHUB_TOKEN}'
+    return headers
+
+def gh_repo_parts():
+    if not GITHUB_REPO or '/' not in GITHUB_REPO:
+        return None, None
+    owner, repo = GITHUB_REPO.split('/', 1)
+    return owner, repo
+
+@app.route('/admin/github/list', methods=['GET'])
+def admin_github_list():
+    if not require_admin():
+        return jsonify({'error': 'not_logged_in'}), 401
+
+    owner, repo = gh_repo_parts()
+    if not owner:
+        return jsonify({'error': 'GITHUB_REPO not configured'}), 500
+
+    # Use git/trees recursive to list files
+    tree_url = f'https://api.github.com/repos/{owner}/{repo}/git/trees/{GITHUB_BRANCH}?recursive=1'
+    try:
+        r = requests.get(tree_url, headers=gh_headers(), timeout=15)
+        if r.status_code != 200:
+            return jsonify({'error': 'github_list_failed', 'detail': r.text}), 500
+        data = r.json()
+        files = []
+        for item in data.get('tree', []):
+            if item.get('type') != 'blob':
+                continue
+            path = item.get('path')
+            ext = Path(path).suffix.lower()
+            if ext in ALLOWED_IMG_EXTS:
+                files.append({
+                    'path': path,
+                    'name': Path(path).name,
+                    'size': item.get('size'),
+                    'sha': item.get('sha'),
+                    'download_url': f'https://raw.githubusercontent.com/{owner}/{repo}/{GITHUB_BRANCH}/{path}'
+                })
+        return jsonify({'files': files})
+    except Exception as e:
+        return jsonify({'error': 'exception', 'detail': str(e)}), 500
+
+@app.route('/admin/github/delete', methods=['POST'])
+def admin_github_delete():
+    """
+    Delete a single file in the repo. JSON body: { "path": "<path/in/repo>" }
+    Requires GITHUB_TOKEN with repo permissions.
+    """
+    if not require_admin():
+        return jsonify({'success': False, 'error': 'not_logged_in'}), 401
+    payload = request.get_json(silent=True) or {}
+    path = payload.get('path')
+    if not path:
+        return jsonify({'success': False, 'error': 'missing_path'}), 400
+
+    owner, repo = gh_repo_parts()
+    if not owner:
+        return jsonify({'success': False, 'error': 'no_repo_config'}), 500
+    if not GITHUB_TOKEN:
+        return jsonify({'success': False, 'error': 'no_token_configured'}), 500
+
+    # fetch sha for file
+    contents_url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={GITHUB_BRANCH}'
+    r = requests.get(contents_url, headers=gh_headers(), timeout=15)
+    if r.status_code != 200:
+        return jsonify({'success': False, 'error': 'file_not_found', 'detail': r.text}), 404
+    sha = r.json().get('sha')
+
+    delete_url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
+    body = {'message': f'Admin delete {path}', 'sha': sha, 'branch': GITHUB_BRANCH}
+    r2 = requests.delete(delete_url, headers=gh_headers(), data=json.dumps(body), timeout=15)
+    if r2.status_code in (200, 201):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': 'delete_failed', 'detail': r2.text}), 500
+
+@app.route('/admin/github/delete_batch', methods=['POST'])
+def admin_github_delete_batch():
+    if not require_admin():
+        return jsonify({'success': False, 'error': 'not_logged_in'}), 401
+    payload = request.get_json(silent=True) or {}
+    paths = payload.get('paths') or []
+    if not paths:
+        return jsonify({'success': False, 'error': 'missing_paths'}), 400
+
+    owner, repo = gh_repo_parts()
+    if not owner:
+        return jsonify({'success': False, 'error': 'no_repo_config'}), 500
+    if not GITHUB_TOKEN:
+        return jsonify({'success': False, 'error': 'no_token_configured'}), 500
+
+    results = []
+    for path in paths:
+        contents_url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={GITHUB_BRANCH}'
+        r = requests.get(contents_url, headers=gh_headers(), timeout=15)
+        if r.status_code != 200:
+            results.append({'path': path, 'success': False, 'error': 'not_found'})
+            continue
+        sha = r.json().get('sha')
+        delete_url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
+        body = {'message': f'Admin batch delete {path}', 'sha': sha, 'branch': GITHUB_BRANCH}
+        r2 = requests.delete(delete_url, headers=gh_headers(), data=json.dumps(body), timeout=15)
+        if r2.status_code in (200,201):
+            results.append({'path': path, 'success': True})
+        else:
+            results.append({'path': path, 'success': False, 'detail': r2.text})
+    return jsonify({'success': True, 'results': results})
+
+@app.route('/admin/github/import', methods=['POST'])
+def admin_github_import():
+    """
+    Import a file from the repo into runtime uploads and add gallery DB entry.
+    JSON body: { "path": "<path/in/repo>" }
+    """
+    if not require_admin():
+        return jsonify({'success': False, 'error': 'not_logged_in'}), 401
+    payload = request.get_json(silent=True) or {}
+    path = payload.get('path')
+    if not path:
+        return jsonify({'success': False, 'error': 'missing_path'}), 400
+
+    owner, repo = gh_repo_parts()
+    if not owner:
+        return jsonify({'success': False, 'error': 'no_repo_config'}), 500
+
+    raw_url = f'https://raw.githubusercontent.com/{owner}/{repo}/{GITHUB_BRANCH}/{path}'
+    try:
+        r = requests.get(raw_url, timeout=20)
+        if r.status_code != 200:
+            return jsonify({'success': False, 'error': 'download_failed', 'detail': r.text}), 500
+        ext = Path(path).suffix.lower()
+        if ext not in ALLOWED_IMG_EXTS:
+            return jsonify({'success': False, 'error': 'bad_type'}), 400
+        new_name = f"{uuid.uuid4().hex}{ext}"
+        save_path = os.path.join(UPLOAD_FOLDER, new_name)
+        with open(save_path, 'wb') as fh:
+            fh.write(r.content)
+
+        # insert DB row
+        conn = get_conn(CONTACTS_DB)
+        c = conn.cursor()
+        c.execute('INSERT INTO gallery (filename, caption) VALUES (?, ?)', (new_name, Path(path).name))
+        conn.commit()
+        new_id = c.lastrowid
+        conn.close()
+
+        return jsonify({'success': True, 'id': new_id, 'filename': new_name, 'caption': Path(path).name})
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'exception', 'detail': str(e)}), 500
 
 # --- ADMIN: messages delete/export ---
 @app.route('/admin/messages/delete', methods=['POST'])
