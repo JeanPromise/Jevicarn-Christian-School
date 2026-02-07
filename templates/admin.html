@@ -124,6 +124,7 @@
 
           <!-- action toolbar -->
           <div class="flex items-center gap-3 mb-3">
+            <button id="syncExistingBtn" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm">Sync existing static images</button>
             <button id="deleteSelectedBtn" class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-60" disabled>Delete selected</button>
             <button id="replaceSelectedBtn" class="px-3 py-2 bg-yellow-500 text-white rounded disabled:opacity-60" disabled>Replace selected</button>
             <div class="ml-auto text-xs text-gray-500">Tip: click image to toggle selection</div>
@@ -200,6 +201,7 @@ function toast(msg, ok=true){
 const galleryGrid = document.getElementById('galleryGrid');
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const replaceSelectedBtn = document.getElementById('replaceSelectedBtn');
+const syncExistingBtn = document.getElementById('syncExistingBtn');
 let selected = new Set();
 
 function updateToolbar(){
@@ -344,6 +346,25 @@ replaceForm?.addEventListener('submit', async (e) => {
       toast('Replace failed', false);
     }
   } catch(err){ console.error(err); toast('Replace request failed', false); }
+});
+
+/* Sync existing static images -> gallery DB */
+syncExistingBtn?.addEventListener('click', async () => {
+  if(!confirm('Scan static/uploads for files and import any missing images into the gallery DB?')) return;
+  try{
+    const res = await fetch('/admin/gallery/sync', { method: 'POST' });
+    const data = await res.json();
+    if(res.ok && data.success){
+      toast(`Imported ${data.imported} image(s)`);
+      setTimeout(()=> location.reload(), 700);
+    } else {
+      toast('Sync failed', false);
+      console.error(data);
+    }
+  } catch(err){
+    console.error(err);
+    toast('Sync request failed', false);
+  }
 });
 
 /* keyboard: escape closes modal */
