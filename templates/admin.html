@@ -57,9 +57,9 @@
 
     {% else %}
       <!-- ADMIN ACTION UI -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- USERS PANEL -->
-        <section class="md:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- VISITORS PANEL -->
+        <section class="lg:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
           <h2 class="text-lg font-semibold mb-2">Visitors / Users</h2>
           <p class="text-sm text-gray-600 mb-3">Recent visitors and message counts (admin-only).</p>
 
@@ -106,84 +106,64 @@
           </div>
         </section>
 
-        <!-- RUNTIME GALLERY PANEL -->
-        <section class="md:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
+        <!-- GALLERY PANEL (center) -->
+        <section class="lg:col-span-2 bg-white p-4 rounded-lg border shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">Runtime Gallery</h2>
-            <div class="text-sm text-gray-500">Add • Replace • Delete</div>
+            <h2 class="text-lg font-semibold">Gallery — manage images</h2>
+            <div class="text-sm text-gray-500">Select one image to Replace or Delete. Select many to Delete.</div>
           </div>
 
-          <form id="uploadForm" method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="mb-3">
+          <!-- upload new -->
+          <form id="uploadForm" method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="mb-4">
             <div class="flex gap-2">
-              <input type="file" name="file" accept="image/*" required class="p-2 border rounded w-2/3" />
-              <input name="caption" placeholder="Caption (optional)" class="p-2 border rounded w-1/3" />
-            </div>
-            <div class="mt-2 text-right">
-              <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Add image</button>
+              <input type="file" name="file" accept="image/*" required class="p-2 border rounded w-1/3" />
+              <input name="caption" placeholder="Caption (optional)" class="p-2 border rounded flex-1" />
+              <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded">Add image</button>
             </div>
           </form>
 
-          <div id="galleryGrid" class="grid grid-cols-1 gap-3 max-h-64 overflow-auto">
+          <!-- action toolbar -->
+          <div class="flex items-center gap-3 mb-3">
+            <button id="deleteSelectedBtn" class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-60" disabled>Delete selected</button>
+            <button id="replaceSelectedBtn" class="px-3 py-2 bg-yellow-500 text-white rounded disabled:opacity-60" disabled>Replace selected</button>
+            <div class="ml-auto text-xs text-gray-500">Tip: click image to toggle selection</div>
+          </div>
+
+          <!-- gallery grid -->
+          <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {% if gallery_items %}
               {% for it in gallery_items %}
-                <div id="card-{{ it.id }}" class="border rounded p-2 flex items-center gap-3">
-                  <img src="{{ url_for('uploaded_file', filename=it.filename) }}" alt="" class="w-20 h-16 object-cover rounded" />
-                  <div class="flex-1">
+              <div class="relative border rounded p-2 flex flex-col items-stretch" data-id="{{ it.id }}">
+                <label class="cursor-pointer">
+                  <input type="checkbox" class="card-check sr-only" data-id="{{ it.id }}">
+                  <img src="{{ url_for('uploaded_file', filename=it.filename) }}" alt="" class="w-full h-40 object-cover rounded select-none" />
+                </label>
+
+                <div class="mt-2 flex items-center justify-between gap-2">
+                  <div class="flex-1 min-w-0">
                     <div class="text-sm text-gray-700 truncate">{{ it.caption or '—' }}</div>
                     <div class="text-xs text-gray-500">{{ it.created_at }}</div>
                   </div>
-                  <div class="flex flex-col gap-2">
-                    <button data-id="{{ it.id }}" class="replace-btn px-3 py-1 bg-yellow-500 text-white rounded text-sm">Replace</button>
-                    <button data-id="{{ it.id }}" class="delete-btn px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                  <div class="flex flex-col gap-2 ml-2">
+                    <button data-id="{{ it.id }}" class="single-replace-btn px-3 py-1 bg-yellow-500 text-white rounded text-sm">Replace</button>
+                    <button data-id="{{ it.id }}" class="single-delete-btn px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
                   </div>
                 </div>
+              </div>
               {% endfor %}
             {% else %}
-              <div class="text-gray-500 p-4">No images uploaded.</div>
+              <div class="text-gray-500 p-6">No images uploaded yet.</div>
             {% endif %}
-          </div>
-        </section>
-
-        <!-- GITHUB FILES PANEL -->
-        <section class="md:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">GitHub Files (repo)</h2>
-            <div class="text-sm text-gray-500">Select repo images to import/delete</div>
-          </div>
-
-          <div class="mb-3">
-            <div class="flex gap-2">
-              <button id="refreshGithub" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Refresh list</button>
-              <button id="importSelected" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Import selected</button>
-              <button id="deleteSelected" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete selected</button>
-            </div>
-            <div class="mt-2 text-xs text-gray-500">Note: deleting commits to GitHub (requires server GitHub token). Importing downloads file into runtime uploads and adds DB row.</div>
-          </div>
-
-          <div id="githubFilesWrap" class="overflow-auto max-h-72 border rounded p-2">
-            <table id="githubFiles" class="min-w-full text-sm">
-              <thead class="bg-gray-100 sticky top-0">
-                <tr>
-                  <th class="px-2 py-2"><input id="githubSelectAll" type="checkbox" /></th>
-                  <th class="px-2 py-2 text-left">Path</th>
-                  <th class="px-2 py-2">Size</th>
-                  <th class="px-2 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="githubFilesBody">
-                <tr><td colspan="4" class="text-gray-500 px-3 py-6 text-center">Click "Refresh list" to load repo files.</td></tr>
-              </tbody>
-            </table>
           </div>
         </section>
       </div>
 
       <!-- REPLACE MODAL -->
-      <div id="replaceModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 z-50">
+      <div id="replaceModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
         <div class="bg-white rounded-lg p-4 w-full max-w-md">
           <h3 class="font-semibold mb-2">Replace image</h3>
           <form id="replaceForm">
-            <input type="hidden" name="id" id="replace_id" />
+            <input type="hidden" id="replace_target_id" name="id" />
             <div class="mb-2">
               <input id="replace_file" type="file" name="file" accept="image/*" required class="w-full" />
             </div>
@@ -195,7 +175,7 @@
         </div>
       </div>
 
-      <!-- notification / toast -->
+      <!-- toast -->
       <div id="toast" class="fixed right-6 bottom-6 hidden p-3 rounded shadow text-sm"></div>
 
     {% endif %}
@@ -204,225 +184,175 @@
 
 {% if logged_in %}
 <script>
-/* ---------- utilities ---------- */
-function toast(msg, success=true){
+/* Minimal, friendly JS to support selection + single/multi actions */
+/* Utility: toast */
+function toast(msg, ok=true){
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = '';
   el.classList.add('fixed','right-6','bottom-6','p-3','rounded','shadow','text-sm');
-  el.classList.add(success ? 'bg-green-100' : 'bg-red-100');
+  el.classList.add(ok ? 'bg-green-100' : 'bg-red-100');
   el.style.display = 'block';
-  setTimeout(()=> el.style.display = 'none', 3500);
+  setTimeout(()=> el.style.display = 'none', 3000);
 }
 
-/* -------- RUNTIME gallery actions (existing endpoints) -------- */
-async function deleteImage(id){
-  if(!confirm('Delete this image from runtime gallery?')) return;
-  try{
+/* Selection logic */
+const galleryGrid = document.getElementById('galleryGrid');
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+const replaceSelectedBtn = document.getElementById('replaceSelectedBtn');
+let selected = new Set();
+
+function updateToolbar(){
+  const n = selected.size;
+  deleteSelectedBtn.disabled = n === 0;
+  replaceSelectedBtn.disabled = n !== 1;
+}
+
+/* Toggle checkbox when clicking card image */
+galleryGrid?.addEventListener('click', (e) => {
+  // find the card element
+  const card = e.target.closest('[data-id]');
+  if(!card) return;
+  // if user clicked the individual action buttons, let those handlers run
+  if(e.target.closest('.single-delete-btn') || e.target.closest('.single-replace-btn') || e.target.closest('button')) return;
+
+  const id = card.getAttribute('data-id');
+  const checkbox = card.querySelector('.card-check');
+  if(!checkbox) return;
+  checkbox.checked = !checkbox.checked;
+  if(checkbox.checked) selected.add(id); else selected.delete(id);
+  card.classList.toggle('ring-2', checkbox.checked);
+  updateToolbar();
+});
+
+/* Keep selected state when user clicks the visible checkboxes */
+galleryGrid?.querySelectorAll('.card-check')?.forEach(cb => {
+  cb.addEventListener('change', (e) => {
+    const id = cb.getAttribute('data-id');
+    const card = cb.closest('[data-id]');
+    if(cb.checked) { selected.add(id); card.classList.add('ring-2'); }
+    else { selected.delete(id); card.classList.remove('ring-2'); }
+    updateToolbar();
+  });
+});
+
+/* Single-delete button */
+galleryGrid?.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.single-delete-btn');
+  if(!btn) return;
+  const id = btn.getAttribute('data-id');
+  if(!confirm('Delete this image?')) return;
+  try {
     const res = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ id: id })
     });
-    const data = await res.json();
-    if(res.ok && data.success){
-      document.getElementById('card-'+id)?.remove();
+    const payload = await res.json();
+    if(res.ok && payload.success){
+      document.querySelector(`[data-id="${id}"]`)?.remove();
+      selected.delete(id);
+      updateToolbar();
       toast('Image deleted');
     } else {
-      toast('Delete failed: ' + (data.error || 'unknown'), false);
+      toast('Delete failed', false);
     }
-  } catch(e){
-    console.error(e);
-    toast('Delete request failed', false);
-  }
-}
-
-document.addEventListener('click', function(e){
-  if(e.target.matches('.delete-btn')){
-    const id = e.target.getAttribute('data-id');
-    deleteImage(id);
-  } else if(e.target.matches('.replace-btn')){
-    const id = e.target.getAttribute('data-id');
-    openReplace(id);
-  }
+  } catch(err){ console.error(err); toast('Delete request failed', false); }
 });
 
-/* Replace modal handlers */
-function openReplace(id){
-  document.getElementById('replace_id').value = id;
-  document.getElementById('replace_file').value = '';
-  const m = document.getElementById('replaceModal');
-  m.classList.remove('hidden'); m.classList.add('flex');
-}
-function closeReplace(){
-  const m = document.getElementById('replaceModal');
-  m.classList.add('hidden'); m.classList.remove('flex');
-}
-document.getElementById && document.getElementById('replaceCancel')?.addEventListener('click', closeReplace);
+/* Single-replace button */
+galleryGrid?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.single-replace-btn');
+  if(!btn) return;
+  const id = btn.getAttribute('data-id');
+  openReplaceModal(id);
+});
 
-document.getElementById && document.getElementById('replaceForm')?.addEventListener('submit', async function(e){
+/* Delete selected (many) */
+deleteSelectedBtn?.addEventListener('click', async () => {
+  if(selected.size === 0) { toast('No images selected', false); return; }
+  if(!confirm(`Delete ${selected.size} image(s)?`)) return;
+  const ids = Array.from(selected);
+  for(const id of ids){
+    try{
+      const res = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id: id })
+      });
+      const payload = await res.json();
+      if(res.ok && payload.success){
+        document.querySelector(`[data-id="${id}"]`)?.remove();
+        selected.delete(id);
+      } else {
+        toast('Failed to delete some items', false);
+      }
+    } catch(err){
+      console.error(err);
+      toast('Delete requests failed', false);
+      break;
+    }
+  }
+  updateToolbar();
+  toast('Selected deletes processed');
+});
+
+/* Replace selected (only when exactly one selected) */
+replaceSelectedBtn?.addEventListener('click', () => {
+  if(selected.size !== 1) { toast('Select exactly one image to replace', false); return; }
+  const id = Array.from(selected)[0];
+  openReplaceModal(id);
+});
+
+/* Replace modal */
+const replaceModal = document.getElementById('replaceModal');
+const replaceForm = document.getElementById('replaceForm');
+function openReplaceModal(id){
+  document.getElementById('replace_target_id').value = id;
+  document.getElementById('replace_file').value = '';
+  replaceModal.classList.remove('hidden');
+  replaceModal.classList.add('flex');
+}
+function closeReplaceModal(){
+  replaceModal.classList.add('hidden');
+  replaceModal.classList.remove('flex');
+}
+document.getElementById('replaceCancel')?.addEventListener('click', closeReplaceModal);
+
+/* Replace submit */
+replaceForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const id = document.getElementById('replace_id').value;
+  const id = document.getElementById('replace_target_id').value;
   const fileInput = document.getElementById('replace_file');
-  if(!fileInput.files.length){ toast('Select a file', false); return; }
+  if(!fileInput.files.length) { toast('Choose a file', false); return; }
   const fd = new FormData();
-  fd.append('file', fileInput.files[0]);
   fd.append('id', id);
-  try{
-    const resp = await fetch('/admin/gallery/replace_ajax', { method: 'POST', body: fd });
+  fd.append('file', fileInput.files[0]);
+  try {
+    const resp = await fetch('{{ url_for("admin_gallery_replace_ajax") }}', { method: 'POST', body: fd });
     const data = await resp.json();
     if(resp.ok && data.success){
-      const card = document.getElementById('card-'+id);
+      // update the image src in the card
+      const card = document.querySelector(`[data-id="${id}"]`);
       if(card){
         const img = card.querySelector('img');
         if(img) img.src = '/uploads/' + data.filename + '?t=' + Date.now();
       }
-      closeReplace(); toast('Image replaced');
+      closeReplaceModal();
+      toast('Image replaced');
     } else {
-      toast('Replace failed: '+(data.error||'unknown'), false);
+      toast('Replace failed', false);
     }
-  } catch(err){
-    console.error(err); toast('Replace request failed', false);
-  }
+  } catch(err){ console.error(err); toast('Replace request failed', false); }
 });
 
-/* -------- GitHub files panel (calls server endpoints) -------- */
-const githubBody = document.getElementById('githubFilesBody');
-const selectAll = document.getElementById('githubSelectAll');
-
-async function refreshGithubList(){
-  githubBody.innerHTML = '<tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">Loading…</td></tr>';
-  try{
-    const resp = await fetch('/admin/github/list');
-    if(!resp.ok){ throw new Error('Fetch failed'); }
-    const data = await resp.json();
-    const files = data.files || [];
-    if(files.length === 0){
-      githubBody.innerHTML = '<tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">No files found in repo.</td></tr>';
-      return;
-    }
-    githubBody.innerHTML = files.map(f => `
-      <tr data-path="${encodeURIComponent(f.path)}" class="border-b">
-        <td class="px-2 py-2"><input class="gh-chk" type="checkbox" data-path="${f.path}" /></td>
-        <td class="px-2 py-2 break-all text-sm">${f.path}</td>
-        <td class="px-2 py-2 text-xs text-gray-500">${f.size || '-'}</td>
-        <td class="px-2 py-2">
-          <button class="px-2 py-1 bg-green-600 text-white rounded text-xs" data-action="import" data-path="${f.path}">Import</button>
-          <button class="px-2 py-1 bg-red-600 text-white rounded text-xs" data-action="delete" data-path="${f.path}">Delete</button>
-        </td>
-      </tr>
-    `).join('');
-  }catch(err){
-    console.error(err);
-    githubBody.innerHTML = '<tr><td colspan="4" class="px-3 py-6 text-center text-red-500">Failed to load repo files.</td></tr>';
-  }
-}
-
-document.getElementById('refreshGithub')?.addEventListener('click', refreshGithubList);
-
-selectAll?.addEventListener('change', function(){
-  document.querySelectorAll('.gh-chk').forEach(cb => cb.checked = this.checked);
+/* keyboard: escape closes modal */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeReplaceModal();
 });
 
-document.getElementById('githubFiles')?.addEventListener('click', async function(e){
-  const btn = e.target.closest('button[data-action]');
-  if(!btn) return;
-  const action = btn.getAttribute('data-action');
-  const path = btn.getAttribute('data-path');
-  if(action === 'delete'){
-    if(!confirm('Delete this file from GitHub repo? This action will commit the delete on the repo.')) return;
-    try{
-      const res = await fetch('/admin/github/delete', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ path: path })
-      });
-      const data = await res.json();
-      if(res.ok && data.success){
-        toast('Deleted from GitHub');
-        refreshGithubList();
-      } else {
-        toast('Delete failed: ' + (data.error || 'unknown'), false);
-      }
-    }catch(err){ console.error(err); toast('Delete request failed', false); }
-  } else if(action === 'import'){
-    if(!confirm('Import this repo file into runtime uploads?')) return;
-    try{
-      const res = await fetch('/admin/github/import', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ path: path })
-      });
-      const data = await res.json();
-      if(res.ok && data.success){
-        toast('Imported to runtime gallery');
-        // optionally add card to runtime list (naive append)
-        const gid = 'card-' + (data.id || ('new-'+Date.now()));
-        const html = `<div id="${gid}" class="border rounded p-2 flex items-center gap-3">
-                        <img src="/uploads/${data.filename}" class="w-20 h-16 object-cover rounded" />
-                        <div class="flex-1"><div class="text-sm text-gray-700">${data.caption || '—'}</div></div>
-                        <div class="flex flex-col gap-2">
-                          <button data-id="${data.id || ''}" class="replace-btn px-3 py-1 bg-yellow-500 text-white rounded text-sm">Replace</button>
-                          <button data-id="${data.id || ''}" class="delete-btn px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
-                        </div>
-                      </div>`;
-        document.getElementById('galleryGrid')?.insertAdjacentHTML('afterbegin', html);
-      } else {
-        toast('Import failed: ' + (data.error||'unknown'), false);
-      }
-    }catch(err){ console.error(err); toast('Import request failed', false); }
-  }
-});
-
-/* Batch actions */
-document.getElementById('deleteSelected')?.addEventListener('click', async function(){
-  const checked = Array.from(document.querySelectorAll('.gh-chk:checked')).map(cb => cb.getAttribute('data-path'));
-  if(!checked.length) { toast('No files selected', false); return; }
-  if(!confirm(`Delete ${checked.length} file(s) from GitHub?`)) return;
-  try{
-    const res = await fetch('/admin/github/delete_batch', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ paths: checked })
-    });
-    const data = await res.json();
-    if(res.ok && data.success){
-      toast('Deleted selected files');
-      refreshGithubList();
-    } else {
-      toast('Batch delete failed', false);
-    }
-  }catch(err){ console.error(err); toast('Batch delete failed', false); }
-});
-
-document.getElementById('importSelected')?.addEventListener('click', async function(){
-  const checked = Array.from(document.querySelectorAll('.gh-chk:checked')).map(cb => cb.getAttribute('data-path'));
-  if(!checked.length) { toast('No files selected', false); return; }
-  if(!confirm(`Import ${checked.length} file(s) into runtime uploads?`)) return;
-  for(const path of checked){
-    try{
-      const res = await fetch('/admin/github/import', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ path: path })
-      });
-      const data = await res.json();
-      if(res.ok && data.success){
-        // optional: append thumbnail like single import
-      } else {
-        toast('Import failed for: '+path, false);
-      }
-    }catch(err){
-      console.error(err);
-      toast('Import request failed for: '+path, false);
-    }
-  }
-  toast('Import requests sent');
-  refreshGithubList();
-});
-
-/* Initialize */
-refreshGithubList();
+/* init toolbar state */
+updateToolbar();
 </script>
 {% endif %}
 {% endblock %}
