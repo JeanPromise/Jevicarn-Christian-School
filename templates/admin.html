@@ -6,24 +6,58 @@
       📊 Jevicarn Christian School — Admin Insights Dashboard
     </h1>
 
-    <!-- Summary Cards -->
+    {% if not logged_in %}
+    <!-- LOGIN FORM -->
+    <div class="max-w-md mx-auto p-6 bg-blue-50 rounded-lg shadow">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div>
+            {% for category, msg in messages %}
+              <div class="mb-2 px-3 py-2 rounded {{ 'bg-green-100 text-green-800' if category=='success' else 'bg-red-100 text-red-800' }}">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" action="{{ url_for('admin_login') }}">
+        <label class="block mb-2 font-semibold">Username</label>
+        <input name="username" class="w-full p-2 rounded border" placeholder="admin" required />
+
+        <label class="block mt-4 mb-2 font-semibold">Password</label>
+        <input name="password" type="password" class="w-full p-2 rounded border" placeholder="••••••" required />
+
+        <div class="mt-4 flex items-center justify-between">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Log in</button>
+        </div>
+      </form>
+
+      <p class="mt-4 text-sm text-gray-600">
+        Default admin: <strong>admin</strong> / <strong>admin123</strong><br>
+        Change credentials by updating <code>hithere.db</code> or setting environment variables before first run.
+      </p>
+    </div>
+
+    {% else %}
+    <!-- SUMMARY CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="bg-blue-100 p-6 rounded-xl text-center shadow">
-        <h2 class="text-lg font-semibold text-blue-900">Total Visitors</h2>
-        <p class="text-4xl font-bold text-blue-700 mt-2">{{ total_visitors }}</p>
+        <h2 class="text-lg font-semibold text-blue-900">Total Messages</h2>
+        <p class="text-4xl font-bold text-blue-700 mt-2">{{ total_msgs }}</p>
       </div>
 
       <div class="bg-green-100 p-6 rounded-xl text-center shadow">
-        <h2 class="text-lg font-semibold text-green-900">Top Location</h2>
+        <h2 class="text-lg font-semibold text-green-900">Unique Users</h2>
         <p class="text-2xl font-bold text-green-700 mt-2">
-          {{ top_location if top_location else 'Unknown' }}
+          {{ total_users if total_users is not none else '0' }}
         </p>
       </div>
 
       <div class="bg-yellow-100 p-6 rounded-xl text-center shadow">
-        <h2 class="text-lg font-semibold text-yellow-900">Most Popular Platform</h2>
+        <h2 class="text-lg font-semibold text-yellow-900">Top Sender</h2>
         <p class="text-2xl font-bold text-yellow-700 mt-2">
-          {{ platforms[0] if platforms else 'N/A' }}
+          {{ top_senders[0][0] if top_senders else 'N/A' }}
         </p>
       </div>
     </div>
@@ -61,12 +95,19 @@
       </table>
     </div>
 
+    <form method="post" action="{{ url_for('admin_logout') }}" class="mt-6 text-right">
+      <button class="px-4 py-2 bg-red-500 text-white rounded">Log out</button>
+    </form>
+
     <p class="text-gray-500 text-center mt-8 text-sm">
-      Last updated {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
+      Last updated {{ (loop_time() if false else cycler()) }}
     </p>
+
+    {% endif %}
   </div>
 </div>
 
+{% if logged_in %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const ctx = document.getElementById('platformChart').getContext('2d');
@@ -76,7 +117,7 @@
       labels: {{ platforms|tojson }},
       datasets: [{
         label: 'Users per Platform',
-        data: {{ counts|tojson }},
+        data: {{ platform_counts|tojson }},
         backgroundColor: [
           '#2563eb', '#16a34a', '#facc15', '#ef4444', '#9333ea',
           '#f97316', '#0ea5e9', '#84cc16'
@@ -93,4 +134,5 @@
     }
   });
 </script>
+{% endif %}
 {% endblock %}
