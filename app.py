@@ -18,7 +18,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import csv
 import io
-import base64
 import json
 
 # --- CONFIG ---
@@ -497,6 +496,35 @@ def admin_gallery_delete_ajax():
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'id': item_id})
+
+# --- ADMIN: sync existing static uploads into gallery DB ---
+@app.route('/admin/gallery/sync', methods=['POST'])
+def admin_gallery_sync():
+    """
+    Admin-only: scan the uploads folder and insert any files missing from the gallery table.
+    Returns JSON with number imported and list of filenames.
+    """
+    if not require_admin():
+        return jsonify({'success': False, 'error': 'not_logged_in'}), 401
+
+    # scan the runtime uploads folder
+    source_dir = UPLOAD_FOLDER
+    try:
+        files = [f for f in os.listdir(source_dir) if Path(f).suffix.lower() in ALLOWED_IMG_EXTS]
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'scan_failed', 'detail': str(e)}), 500
+
+    conn = get_conn(CONTACTS_DB)
+    c = conn.cursor()
+    imported = []
+    for fname in files:
+        c.execute('SELECT id FROM gallery WHERE filename = ?', (fname,))
+        if not c.fetchone():
+            c.execute('INSERT INTO gallery (filename, caption) VALUES (?, ?)', (fname, ''))
+            imported.append(fname)
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'imported': len(imported), 'files': imported})
 
 # --- GitHub integration endpoints (list / delete / delete_batch / import) ---
 def gh_headers():
