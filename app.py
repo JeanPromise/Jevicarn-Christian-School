@@ -373,6 +373,51 @@ def admin_gallery_upload():
     flash("Image uploaded", "success")
     return redirect(url_for('admin'))
 
+@app.route('/admin/gallery/replace_ajax', methods=['POST'])
+def admin_gallery_replace_ajax():
+    if not require_admin():
+        return jsonify({'success': False, 'error': 'not_logged_in'}), 401
+
+    item_id = request.form.get('id')
+    file = request.files.get('file')
+    if not item_id or not file or file.filename == '':
+        return jsonify({'success': False, 'error': 'missing_params'}), 400
+
+    filename_orig = secure_filename(file.filename)
+    ext = Path(filename_orig).suffix.lower()
+    if ext not in ALLOWED_IMG_EXTS:
+        return jsonify({'success': False, 'error': 'bad_type'}), 400
+
+    conn = get_conn(CONTACTS_DB)
+    c = conn.cursor()
+    c.execute('SELECT filename FROM gallery WHERE id = ?', (item_id,))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return jsonify({'success': False, 'error': 'not_found'}), 404
+
+    old_filename = row[0]
+    # save new file
+    new_name = f"{uuid.uuid4().hex}{ext}"
+    save_path = os.path.join(UPLOAD_FOLDER, new_name)
+    file.save(save_path)
+
+    # delete old file safely
+    uploads_dir = os.path.abspath(UPLOAD_FOLDER)
+    old_path = os.path.abspath(os.path.join(uploads_dir, old_filename))
+    try:
+        if old_path.startswith(uploads_dir) and os.path.exists(old_path):
+            os.remove(old_path)
+    except Exception as e:
+        print("Warning deleting old file:", e)
+
+    # update DB
+    c.execute('UPDATE gallery SET filename = ? WHERE id = ?', (new_name, item_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'id': item_id, 'filename': new_name})
+
 @app.route('/admin/gallery/delete', methods=['POST'])
 def admin_gallery_delete():
     """
