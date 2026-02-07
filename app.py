@@ -1,13 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask import send_from_directory
+#!/usr/bin/env python3
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
 import os
 import sqlite3
 from threading import Thread
 import time
 import requests
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+
+# --- ADMIN PATH PLACEHOLDER ---
+# Change this environment variable or edit the default 'pthd' below
+ADMIN_PATH = os.getenv('ADMIN_PATH', 'pthd')
 
 # --- PATHS ---
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
@@ -18,6 +23,17 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     conn.execute('CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY, name TEXT, email TEXT, message TEXT)')
+    # Ensure messages table exists too (used across the app)
+    conn.execute('''CREATE TABLE IF NOT EXISTS messages
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      sender TEXT,
+                      receiver TEXT,
+                      text TEXT,
+                      filename TEXT,
+                      seen INTEGER DEFAULT 0,
+                      location TEXT,
+                      platform TEXT,
+                      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
     conn.commit()
     conn.close()
 
@@ -60,16 +76,19 @@ def gallery():
         images=images,
         title='Our Gallery | Jevicarn Christian Daycare & School'
     )
-#---PROGRAMS PAGE ---
+
+# --- PROGRAMS PAGE ---
 @app.route("/programs")
 def programs():
-    return render_template("programs.html", title="Programs", description="Programs offered at Jevicarn Christian Kindergarten & School", keywords="daycare, kindergarten, primary school, nightcare, Jevicarn, Juja")
-
+    return render_template("programs.html",
+                           title="Programs",
+                           description="Programs offered at Jevicarn Christian Kindergarten & School",
+                           keywords="daycare, kindergarten, primary school, nightcare, Jevicarn, Juja")
 
 # --- CONTACT PAGE ---
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    conn = sqlite3.connect('contacts.db')
+    conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS messages
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,6 +97,7 @@ def contact():
                   filename TEXT,
                   seen INTEGER DEFAULT 0,
                   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    conn.commit()
 
     if request.method == 'POST':
         text = request.form.get('text', '').strip()
@@ -87,28 +107,31 @@ def contact():
             filename = file.filename
             file.save(os.path.join('static/uploads', filename))
         if text or filename:
-            c.execute('INSERT INTO messages (sender, text, filename) VALUES (?, ?, ?)', 
+            c.execute('INSERT INTO messages (sender, text, filename) VALUES (?, ?, ?)',
                       ('user', text, filename))
             conn.commit()
+        conn.close()
         return redirect(url_for('contact'))
 
     # Fetch all messages (user + admin)
-    c.execute('SELECT sender, text, filename, seen FROM messages ORDER BY id ASC')
-    messages_list = [{'sender': row[0], 'text': row[1], 'filename': row[2], 'seen': bool(row[3])} for row in c.fetchall()]
+    c.execute('SELECT sender, text, filename, seen, timestamp FROM messages ORDER BY id ASC')
+    messages_list = [{'sender': row[0], 'text': row[1], 'filename': row[2], 'seen': bool(row[3]), 'timestamp': row[4]} for row in c.fetchall()]
     conn.close()
     return render_template('contact.html', messages_list=messages_list)
 
-# --- ADMIN ANALYTICS DASHBOARD (NEW CLEAN VERSION) ---
+# --- ADMIN ANALYTICS DASHBOARD ---
+# Accessible via /admin and also via /<ADMIN_PATH> (e.g. /pthd)
 @app.route('/admin', methods=['GET'])
+@app.route(f'/{ADMIN_PATH}', methods=['GET'])
 def admin():
     auth = request.args.get('auth')
     if auth != os.getenv('ADMIN_PASS', 'admin123'):
         return "Unauthorized", 403
 
-    conn = sqlite3.connect('contacts.db')
+    conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
 
-    # Ensure messages table exists and has required columns
+    # Ensure messages table exists and has required columns (safe guard)
     c.execute('''CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sender TEXT,
@@ -120,8 +143,9 @@ def admin():
         platform TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
+    conn.commit()
 
-    # Patch missing columns if any
+    # Patch missing columns if any (best-effort)
     c.execute('PRAGMA table_info(messages)')
     cols = [col[1] for col in c.fetchall()]
     for missing in ['receiver', 'location', 'platform']:
@@ -129,7 +153,7 @@ def admin():
             try:
                 c.execute(f'ALTER TABLE messages ADD COLUMN {missing} TEXT;')
                 conn.commit()
-            except:
+            except Exception:
                 pass
 
     # Fetch summarized analytics
@@ -151,25 +175,51 @@ def admin():
     c.execute('SELECT sender, COUNT(*) as count FROM messages WHERE sender != "admin" GROUP BY sender ORDER BY count DESC LIMIT 5')
     top_senders = c.fetchall()
 
-    conn.close()
-
     # Prepare data for charts
     locations = [row[0] for row in location_data if row[0]]
     location_counts = [row[1] for row in location_data if row[0]]
     platforms = [row[0] for row in platform_data if row[0]]
     platform_counts = [row[1] for row in platform_data if row[0]]
 
+    # Top location (safely)
+    top_location = locations[0] if locations else None
+
+    # Recent visitors for the table (last 10 messages)
+    try:
+        qc = conn.cursor()
+        qc.execute('SELECT sender, platform, location, timestamp FROM messages ORDER BY id DESC LIMIT 10')
+        visitors_rows = qc.fetchall()
+    except Exception:
+        visitors_rows = []
+    visitors = [
+        {
+            'name': row[0] or 'Unknown',
+            'platform': row[1] or 'Unknown',
+            'location': row[2] or 'Unknown',
+            'timestamp': row[3]
+        }
+        for row in visitors_rows
+    ]
+
+    # total_visitors same as total messages (for your summary card)
+    total_visitors = total_msgs
+
+    conn.close()
+
     return render_template(
         'admin.html',
         total_msgs=total_msgs,
         total_users=total_users,
+        total_visitors=total_visitors,
         top_senders=top_senders,
         locations=locations,
         location_counts=location_counts,
         platforms=platforms,
-        platform_counts=platform_counts
+        counts=platform_counts,       # template expects 'counts'
+        visitors=visitors,            # template expects 'visitors'
+        top_location=top_location,
+        now=datetime.now               # so {{ now().strftime(...) }} works in Jinja
     )
-
 
 # --- FILE DOWNLOAD / VIEW ROUTE ---
 @app.route('/uploads/<filename>')
