@@ -6,7 +6,44 @@
       📊 Jevicarn Christian School — Admin Insights Dashboard
     </h1>
 
-    {% if not logged_in %}
+    {% if register_mode %}
+    <!-- ONE-TIME REGISTRATION FORM -->
+    <div class="max-w-md mx-auto p-6 bg-green-50 rounded-lg shadow">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div>
+            {% for category, msg in messages %}
+              <div class="mb-2 px-3 py-2 rounded {{ 'bg-green-100 text-green-800' if category=='success' else 'bg-red-100 text-red-800' }}">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <p class="mb-4 text-sm text-gray-700">No admin account exists. Register the first admin (this form will disappear after first registration).</p>
+
+      <form method="post" action="{{ url_for('admin_register') }}">
+        <label class="block mb-2 font-semibold">Username</label>
+        <input name="username" class="w-full p-2 rounded border" placeholder="choose a username" required />
+
+        <label class="block mt-4 mb-2 font-semibold">Password</label>
+        <input name="password" type="password" class="w-full p-2 rounded border" placeholder="password" required />
+
+        <label class="block mt-4 mb-2 font-semibold">Confirm Password</label>
+        <input name="password2" type="password" class="w-full p-2 rounded border" placeholder="confirm password" required />
+
+        <div class="mt-4 flex items-center justify-between">
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Create Admin</button>
+        </div>
+      </form>
+
+      <p class="mt-4 text-sm text-gray-600">
+        After creating the admin, use the login form to access the dashboard.
+      </p>
+    </div>
+
+    {% elif not logged_in %}
     <!-- LOGIN FORM -->
     <div class="max-w-md mx-auto p-6 bg-blue-50 rounded-lg shadow">
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -34,13 +71,12 @@
       </form>
 
       <p class="mt-4 text-sm text-gray-600">
-        Default admin: <strong>admin</strong> / <strong>admin123</strong><br>
-        Change credentials by updating <code>hithere.db</code> or setting environment variables before first run.
+        If you lost credentials, update <code>hithere.db</code> or set environment variables before first run.
       </p>
     </div>
 
     {% else %}
-    <!-- SUMMARY CARDS -->
+    <!-- DASHBOARD -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="bg-blue-100 p-6 rounded-xl text-center shadow">
         <h2 class="text-lg font-semibold text-blue-900">Total Messages</h2>
@@ -62,14 +98,12 @@
       </div>
     </div>
 
-    <!-- Analytics Chart -->
     <div class="bg-gray-50 p-6 rounded-xl shadow mb-8">
       <h3 class="text-xl font-semibold text-gray-700 mb-4">Visitor Source Distribution</h3>
       <canvas id="platformChart" width="400" height="200"></canvas>
     </div>
 
-    <!-- Table of recent visitors -->
-    <div class="bg-white p-6 rounded-xl shadow">
+    <div class="bg-white p-6 rounded-xl shadow mb-8">
       <h3 class="text-xl font-semibold text-gray-700 mb-4">Recent Visitors</h3>
       <table class="min-w-full border border-gray-200 rounded-xl overflow-hidden">
         <thead class="bg-blue-100">
@@ -95,13 +129,54 @@
       </table>
     </div>
 
+    <!-- GALLERY MANAGEMENT (admin-only, inline) -->
+    <div class="bg-white p-6 rounded-xl shadow mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-gray-700">Gallery Manager</h3>
+        <a href="{{ url_for('gallery') }}" class="text-sm text-blue-600">View public gallery</a>
+      </div>
+
+      <!-- Upload form -->
+      <form method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input type="file" name="file" accept="image/*" required class="p-2 border rounded" />
+          <input name="caption" placeholder="Optional caption" class="p-2 border rounded" />
+          <div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Upload</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Existing gallery items -->
+      {% if gallery_items %}
+      <div id="galleryGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% for it in gallery_items %}
+        <div id="gallery-card-{{ it.id }}" class="border rounded p-2 bg-white shadow-sm">
+          <img src="{{ url_for('uploaded_file', filename=it.filename) }}" style="width:100%; height:160px; object-fit:cover; border-radius:6px;" alt="">
+          <div class="mt-2 flex justify-between items-center">
+            <div class="text-sm text-gray-700">{{ it.caption or '' }}</div>
+            <div class="flex items-center gap-2">
+              <!-- AJAX delete button -->
+              <button data-id="{{ it.id }}" class="delete-ajax-btn px-3 py-1 bg-red-500 text-white rounded text-sm">Delete</button>
+
+              <!-- Fallback form (works if JS disabled) -->
+              <form method="post" action="{{ url_for('admin_gallery_delete') }}" onsubmit="return confirm('Delete this image?');">
+                <input type="hidden" name="id" value="{{ it.id }}" />
+                <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded text-sm hidden">Delete (form)</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="text-gray-600">No uploaded images yet.</p>
+      {% endif %}
+    </div>
+
     <form method="post" action="{{ url_for('admin_logout') }}" class="mt-6 text-right">
       <button class="px-4 py-2 bg-red-500 text-white rounded">Log out</button>
     </form>
-
-    <p class="text-gray-500 text-center mt-8 text-sm">
-      Last updated {{ (loop_time() if false else cycler()) }}
-    </p>
 
     {% endif %}
   </div>
@@ -132,6 +207,40 @@
         title: { display: true, text: 'Visitor Sources by Platform' }
       }
     }
+  });
+</script>
+
+<script>
+  // AJAX delete: send JSON to /admin/gallery/delete_ajax and remove card on success
+  document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.delete-ajax-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', async function (e) {
+        const id = this.getAttribute('data-id');
+        if (!confirm('Delete this image?')) return;
+        try {
+          const resp = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+          });
+          const data = await resp.json();
+          if (resp.ok && data.success) {
+            const card = document.getElementById('gallery-card-' + id);
+            if (card) card.remove();
+          } else {
+            alert('Delete failed: ' + (data.error || 'unknown'));
+            // fallback to full reload if desired:
+            // window.location.reload();
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Delete request failed. Are you online?');
+        }
+      });
+    });
   });
 </script>
 {% endif %}
