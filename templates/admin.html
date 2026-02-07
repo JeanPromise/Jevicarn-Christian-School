@@ -1,247 +1,428 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="min-h-screen bg-gray-100 p-6">
-  <div class="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
-    <h1 class="text-3xl font-bold text-center mb-6 text-blue-900">
-      📊 Jevicarn Christian School — Admin Insights Dashboard
-    </h1>
-
-    {% if register_mode %}
-    <!-- ONE-TIME REGISTRATION FORM -->
-    <div class="max-w-md mx-auto p-6 bg-green-50 rounded-lg shadow">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div>
-            {% for category, msg in messages %}
-              <div class="mb-2 px-3 py-2 rounded {{ 'bg-green-100 text-green-800' if category=='success' else 'bg-red-100 text-red-800' }}">
-                {{ msg }}
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
-      <p class="mb-4 text-sm text-gray-700">No admin account exists. Register the first admin (this form will disappear after first registration).</p>
-
-      <form method="post" action="{{ url_for('admin_register') }}">
-        <label class="block mb-2 font-semibold">Username</label>
-        <input name="username" class="w-full p-2 rounded border" placeholder="choose a username" required />
-
-        <label class="block mt-4 mb-2 font-semibold">Password</label>
-        <input name="password" type="password" class="w-full p-2 rounded border" placeholder="password" required />
-
-        <label class="block mt-4 mb-2 font-semibold">Confirm Password</label>
-        <input name="password2" type="password" class="w-full p-2 rounded border" placeholder="confirm password" required />
-
-        <div class="mt-4 flex items-center justify-between">
-          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Create Admin</button>
-        </div>
+<div class="min-h-screen bg-gray-50 p-6">
+  <div class="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-blue-900">⚡ Admin Control — Jevicarn</h1>
+      {% if logged_in %}
+      <form method="post" action="{{ url_for('admin_logout') }}">
+        <button class="px-3 py-1 bg-red-500 text-white rounded text-sm">Logout</button>
       </form>
-
-      <p class="mt-4 text-sm text-gray-600">
-        After creating the admin, use the login form to access the dashboard.
-      </p>
-    </div>
-
-    {% elif not logged_in %}
-    <!-- LOGIN FORM -->
-    <div class="max-w-md mx-auto p-6 bg-blue-50 rounded-lg shadow">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div>
-            {% for category, msg in messages %}
-              <div class="mb-2 px-3 py-2 rounded {{ 'bg-green-100 text-green-800' if category=='success' else 'bg-red-100 text-red-800' }}">
-                {{ msg }}
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
-      <form method="post" action="{{ url_for('admin_login') }}">
-        <label class="block mb-2 font-semibold">Username</label>
-        <input name="username" class="w-full p-2 rounded border" placeholder="admin" required />
-
-        <label class="block mt-4 mb-2 font-semibold">Password</label>
-        <input name="password" type="password" class="w-full p-2 rounded border" placeholder="••••••" required />
-
-        <div class="mt-4 flex items-center justify-between">
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Log in</button>
-        </div>
-      </form>
-
-      <p class="mt-4 text-sm text-gray-600">
-        If you lost credentials, update <code>hithere.db</code> or set environment variables before first run.
-      </p>
-    </div>
-
-    {% else %}
-    <!-- DASHBOARD -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-blue-100 p-6 rounded-xl text-center shadow">
-        <h2 class="text-lg font-semibold text-blue-900">Total Messages</h2>
-        <p class="text-4xl font-bold text-blue-700 mt-2">{{ total_msgs }}</p>
-      </div>
-
-      <div class="bg-green-100 p-6 rounded-xl text-center shadow">
-        <h2 class="text-lg font-semibold text-green-900">Unique Users</h2>
-        <p class="text-2xl font-bold text-green-700 mt-2">
-          {{ total_users if total_users is not none else '0' }}
-        </p>
-      </div>
-
-      <div class="bg-yellow-100 p-6 rounded-xl text-center shadow">
-        <h2 class="text-lg font-semibold text-yellow-900">Top Sender</h2>
-        <p class="text-2xl font-bold text-yellow-700 mt-2">
-          {{ top_senders[0][0] if top_senders else 'N/A' }}
-        </p>
-      </div>
-    </div>
-
-    <div class="bg-gray-50 p-6 rounded-xl shadow mb-8">
-      <h3 class="text-xl font-semibold text-gray-700 mb-4">Visitor Source Distribution</h3>
-      <canvas id="platformChart" width="400" height="200"></canvas>
-    </div>
-
-    <div class="bg-white p-6 rounded-xl shadow mb-8">
-      <h3 class="text-xl font-semibold text-gray-700 mb-4">Recent Visitors</h3>
-      <table class="min-w-full border border-gray-200 rounded-xl overflow-hidden">
-        <thead class="bg-blue-100">
-          <tr>
-            <th class="px-4 py-2 text-left">Name</th>
-            <th class="px-4 py-2 text-left">Platform</th>
-            <th class="px-4 py-2 text-left">Location</th>
-            <th class="px-4 py-2 text-left">Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for v in visitors %}
-          <tr class="border-b hover:bg-gray-50">
-            <td class="px-4 py-2">{{ v.name }}</td>
-            <td class="px-4 py-2">{{ v.platform }}</td>
-            <td class="px-4 py-2">{{ v.location }}</td>
-            <td class="px-4 py-2 text-sm text-gray-500">{{ v.timestamp }}</td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4" class="text-center py-6 text-gray-500">No visitor data yet</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- GALLERY MANAGEMENT (admin-only, inline) -->
-    <div class="bg-white p-6 rounded-xl shadow mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-semibold text-gray-700">Gallery Manager</h3>
-        <a href="{{ url_for('gallery') }}" class="text-sm text-blue-600">View public gallery</a>
-      </div>
-
-      <!-- Upload form -->
-      <form method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="mb-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input type="file" name="file" accept="image/*" required class="p-2 border rounded" />
-          <input name="caption" placeholder="Optional caption" class="p-2 border rounded" />
-          <div>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Upload</button>
-          </div>
-        </div>
-      </form>
-
-      <!-- Existing gallery items -->
-      {% if gallery_items %}
-      <div id="galleryGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {% for it in gallery_items %}
-        <div id="gallery-card-{{ it.id }}" class="border rounded p-2 bg-white shadow-sm">
-          <img src="{{ url_for('uploaded_file', filename=it.filename) }}" style="width:100%; height:160px; object-fit:cover; border-radius:6px;" alt="">
-          <div class="mt-2 flex justify-between items-center">
-            <div class="text-sm text-gray-700">{{ it.caption or '' }}</div>
-            <div class="flex items-center gap-2">
-              <!-- AJAX delete button -->
-              <button data-id="{{ it.id }}" class="delete-ajax-btn px-3 py-1 bg-red-500 text-white rounded text-sm">Delete</button>
-
-              <!-- Fallback form (works if JS disabled) -->
-              <form method="post" action="{{ url_for('admin_gallery_delete') }}" onsubmit="return confirm('Delete this image?');">
-                <input type="hidden" name="id" value="{{ it.id }}" />
-                <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded text-sm hidden">Delete (form)</button>
-              </form>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-        <p class="text-gray-600">No uploaded images yet.</p>
       {% endif %}
     </div>
 
-    <form method="post" action="{{ url_for('admin_logout') }}" class="mt-6 text-right">
-      <button class="px-4 py-2 bg-red-500 text-white rounded">Log out</button>
-    </form>
+    {% if register_mode %}
+      <!-- One-time registration -->
+      <div class="max-w-md mx-auto p-6 bg-green-50 rounded-lg shadow">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-4">
+              {% for category, msg in messages %}
+                <div class="mb-2 px-3 py-2 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">{{ msg }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <form method="post" action="{{ url_for('admin_register') }}">
+          <label class="block mb-2 font-semibold">Username</label>
+          <input name="username" class="w-full p-2 rounded border" required />
+          <label class="block mt-4 mb-2 font-semibold">Password</label>
+          <input name="password" type="password" class="w-full p-2 rounded border" required />
+          <label class="block mt-4 mb-2 font-semibold">Confirm</label>
+          <input name="password2" type="password" class="w-full p-2 rounded border" required />
+          <div class="mt-4 text-right"><button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Create Admin</button></div>
+        </form>
+      </div>
+
+    {% elif not logged_in %}
+      <!-- Login -->
+      <div class="max-w-md mx-auto p-6 bg-blue-50 rounded-lg shadow">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-4">
+              {% for category, msg in messages %}
+                <div class="mb-2 px-3 py-2 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">{{ msg }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <form method="post" action="{{ url_for('admin_login') }}">
+          <label class="block mb-2 font-semibold">Username</label>
+          <input name="username" class="w-full p-2 rounded border" required />
+          <label class="block mt-4 mb-2 font-semibold">Password</label>
+          <input name="password" type="password" class="w-full p-2 rounded border" required />
+          <div class="mt-4 text-right"><button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Log in</button></div>
+        </form>
+      </div>
+
+    {% else %}
+      <!-- ADMIN ACTION UI -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- USERS PANEL -->
+        <section class="md:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
+          <h2 class="text-lg font-semibold mb-2">Visitors / Users</h2>
+          <p class="text-sm text-gray-600 mb-3">Recent visitors and message counts (admin-only).</p>
+
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="p-3 rounded border bg-gray-50 text-center">
+              <div class="text-xs text-gray-500">Total messages</div>
+              <div class="font-bold text-lg">{{ total_msgs or 0 }}</div>
+            </div>
+            <div class="p-3 rounded border bg-gray-50 text-center">
+              <div class="text-xs text-gray-500">Unique users</div>
+              <div class="font-bold text-lg">{{ total_users or 0 }}</div>
+            </div>
+          </div>
+
+          <div class="overflow-auto max-h-64">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                  <th class="px-3 py-2">User</th>
+                  <th class="px-3 py-2">Messages</th>
+                  <th class="px-3 py-2">Platform</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in top_senders %}
+                <tr class="border-b">
+                  <td class="px-3 py-2">{{ s[0] }}</td>
+                  <td class="px-3 py-2">{{ s[1] }}</td>
+                  <td class="px-3 py-2">—</td>
+                </tr>
+                {% endfor %}
+                {% for v in visitors %}
+                <tr class="border-b">
+                  <td class="px-3 py-2">{{ v.name }}</td>
+                  <td class="px-3 py-2">—</td>
+                  <td class="px-3 py-2">{{ v.platform }}</td>
+                </tr>
+                {% endfor %}
+                {% if not top_senders and not visitors %}
+                <tr><td colspan="3" class="px-3 py-6 text-gray-500 text-center">No visitor data yet.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- RUNTIME GALLERY PANEL -->
+        <section class="md:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Runtime Gallery</h2>
+            <div class="text-sm text-gray-500">Add • Replace • Delete</div>
+          </div>
+
+          <form id="uploadForm" method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="mb-3">
+            <div class="flex gap-2">
+              <input type="file" name="file" accept="image/*" required class="p-2 border rounded w-2/3" />
+              <input name="caption" placeholder="Caption (optional)" class="p-2 border rounded w-1/3" />
+            </div>
+            <div class="mt-2 text-right">
+              <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded">Add image</button>
+            </div>
+          </form>
+
+          <div id="galleryGrid" class="grid grid-cols-1 gap-3 max-h-64 overflow-auto">
+            {% if gallery_items %}
+              {% for it in gallery_items %}
+                <div id="card-{{ it.id }}" class="border rounded p-2 flex items-center gap-3">
+                  <img src="{{ url_for('uploaded_file', filename=it.filename) }}" alt="" class="w-20 h-16 object-cover rounded" />
+                  <div class="flex-1">
+                    <div class="text-sm text-gray-700 truncate">{{ it.caption or '—' }}</div>
+                    <div class="text-xs text-gray-500">{{ it.created_at }}</div>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <button data-id="{{ it.id }}" class="replace-btn px-3 py-1 bg-yellow-500 text-white rounded text-sm">Replace</button>
+                    <button data-id="{{ it.id }}" class="delete-btn px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-gray-500 p-4">No images uploaded.</div>
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- GITHUB FILES PANEL -->
+        <section class="md:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">GitHub Files (repo)</h2>
+            <div class="text-sm text-gray-500">Select repo images to import/delete</div>
+          </div>
+
+          <div class="mb-3">
+            <div class="flex gap-2">
+              <button id="refreshGithub" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Refresh list</button>
+              <button id="importSelected" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Import selected</button>
+              <button id="deleteSelected" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Delete selected</button>
+            </div>
+            <div class="mt-2 text-xs text-gray-500">Note: deleting commits to GitHub (requires server GitHub token). Importing downloads file into runtime uploads and adds DB row.</div>
+          </div>
+
+          <div id="githubFilesWrap" class="overflow-auto max-h-72 border rounded p-2">
+            <table id="githubFiles" class="min-w-full text-sm">
+              <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                  <th class="px-2 py-2"><input id="githubSelectAll" type="checkbox" /></th>
+                  <th class="px-2 py-2 text-left">Path</th>
+                  <th class="px-2 py-2">Size</th>
+                  <th class="px-2 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="githubFilesBody">
+                <tr><td colspan="4" class="text-gray-500 px-3 py-6 text-center">Click "Refresh list" to load repo files.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- REPLACE MODAL -->
+      <div id="replaceModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 z-50">
+        <div class="bg-white rounded-lg p-4 w-full max-w-md">
+          <h3 class="font-semibold mb-2">Replace image</h3>
+          <form id="replaceForm">
+            <input type="hidden" name="id" id="replace_id" />
+            <div class="mb-2">
+              <input id="replace_file" type="file" name="file" accept="image/*" required class="w-full" />
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" id="replaceCancel" class="px-3 py-1 rounded border">Cancel</button>
+              <button type="submit" class="px-3 py-1 bg-yellow-600 text-white rounded">Replace</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- notification / toast -->
+      <div id="toast" class="fixed right-6 bottom-6 hidden p-3 rounded shadow text-sm"></div>
 
     {% endif %}
   </div>
 </div>
 
 {% if logged_in %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById('platformChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: {{ platforms|tojson }},
-      datasets: [{
-        label: 'Users per Platform',
-        data: {{ platform_counts|tojson }},
-        backgroundColor: [
-          '#2563eb', '#16a34a', '#facc15', '#ef4444', '#9333ea',
-          '#f97316', '#0ea5e9', '#84cc16'
-        ],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom' },
-        title: { display: true, text: 'Visitor Sources by Platform' }
-      }
-    }
-  });
-</script>
+/* ---------- utilities ---------- */
+function toast(msg, success=true){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = '';
+  el.classList.add('fixed','right-6','bottom-6','p-3','rounded','shadow','text-sm');
+  el.classList.add(success ? 'bg-green-100' : 'bg-red-100');
+  el.style.display = 'block';
+  setTimeout(()=> el.style.display = 'none', 3500);
+}
 
-<script>
-  // AJAX delete: send JSON to /admin/gallery/delete_ajax and remove card on success
-  document.addEventListener('DOMContentLoaded', function () {
-    const buttons = document.querySelectorAll('.delete-ajax-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', async function (e) {
-        const id = this.getAttribute('data-id');
-        if (!confirm('Delete this image?')) return;
-        try {
-          const resp = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: id })
-          });
-          const data = await resp.json();
-          if (resp.ok && data.success) {
-            const card = document.getElementById('gallery-card-' + id);
-            if (card) card.remove();
-          } else {
-            alert('Delete failed: ' + (data.error || 'unknown'));
-            // fallback to full reload if desired:
-            // window.location.reload();
-          }
-        } catch (err) {
-          console.error(err);
-          alert('Delete request failed. Are you online?');
-        }
-      });
+/* -------- RUNTIME gallery actions (existing endpoints) -------- */
+async function deleteImage(id){
+  if(!confirm('Delete this image from runtime gallery?')) return;
+  try{
+    const res = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id: id })
     });
-  });
+    const data = await res.json();
+    if(res.ok && data.success){
+      document.getElementById('card-'+id)?.remove();
+      toast('Image deleted');
+    } else {
+      toast('Delete failed: ' + (data.error || 'unknown'), false);
+    }
+  } catch(e){
+    console.error(e);
+    toast('Delete request failed', false);
+  }
+}
+
+document.addEventListener('click', function(e){
+  if(e.target.matches('.delete-btn')){
+    const id = e.target.getAttribute('data-id');
+    deleteImage(id);
+  } else if(e.target.matches('.replace-btn')){
+    const id = e.target.getAttribute('data-id');
+    openReplace(id);
+  }
+});
+
+/* Replace modal handlers */
+function openReplace(id){
+  document.getElementById('replace_id').value = id;
+  document.getElementById('replace_file').value = '';
+  const m = document.getElementById('replaceModal');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeReplace(){
+  const m = document.getElementById('replaceModal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+document.getElementById && document.getElementById('replaceCancel')?.addEventListener('click', closeReplace);
+
+document.getElementById && document.getElementById('replaceForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const id = document.getElementById('replace_id').value;
+  const fileInput = document.getElementById('replace_file');
+  if(!fileInput.files.length){ toast('Select a file', false); return; }
+  const fd = new FormData();
+  fd.append('file', fileInput.files[0]);
+  fd.append('id', id);
+  try{
+    const resp = await fetch('/admin/gallery/replace_ajax', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if(resp.ok && data.success){
+      const card = document.getElementById('card-'+id);
+      if(card){
+        const img = card.querySelector('img');
+        if(img) img.src = '/uploads/' + data.filename + '?t=' + Date.now();
+      }
+      closeReplace(); toast('Image replaced');
+    } else {
+      toast('Replace failed: '+(data.error||'unknown'), false);
+    }
+  } catch(err){
+    console.error(err); toast('Replace request failed', false);
+  }
+});
+
+/* -------- GitHub files panel (calls server endpoints) -------- */
+const githubBody = document.getElementById('githubFilesBody');
+const selectAll = document.getElementById('githubSelectAll');
+
+async function refreshGithubList(){
+  githubBody.innerHTML = '<tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">Loading…</td></tr>';
+  try{
+    const resp = await fetch('/admin/github/list');
+    if(!resp.ok){ throw new Error('Fetch failed'); }
+    const data = await resp.json();
+    const files = data.files || [];
+    if(files.length === 0){
+      githubBody.innerHTML = '<tr><td colspan="4" class="px-3 py-6 text-center text-gray-500">No files found in repo.</td></tr>';
+      return;
+    }
+    githubBody.innerHTML = files.map(f => `
+      <tr data-path="${encodeURIComponent(f.path)}" class="border-b">
+        <td class="px-2 py-2"><input class="gh-chk" type="checkbox" data-path="${f.path}" /></td>
+        <td class="px-2 py-2 break-all text-sm">${f.path}</td>
+        <td class="px-2 py-2 text-xs text-gray-500">${f.size || '-'}</td>
+        <td class="px-2 py-2">
+          <button class="px-2 py-1 bg-green-600 text-white rounded text-xs" data-action="import" data-path="${f.path}">Import</button>
+          <button class="px-2 py-1 bg-red-600 text-white rounded text-xs" data-action="delete" data-path="${f.path}">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }catch(err){
+    console.error(err);
+    githubBody.innerHTML = '<tr><td colspan="4" class="px-3 py-6 text-center text-red-500">Failed to load repo files.</td></tr>';
+  }
+}
+
+document.getElementById('refreshGithub')?.addEventListener('click', refreshGithubList);
+
+selectAll?.addEventListener('change', function(){
+  document.querySelectorAll('.gh-chk').forEach(cb => cb.checked = this.checked);
+});
+
+document.getElementById('githubFiles')?.addEventListener('click', async function(e){
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const action = btn.getAttribute('data-action');
+  const path = btn.getAttribute('data-path');
+  if(action === 'delete'){
+    if(!confirm('Delete this file from GitHub repo? This action will commit the delete on the repo.')) return;
+    try{
+      const res = await fetch('/admin/github/delete', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ path: path })
+      });
+      const data = await res.json();
+      if(res.ok && data.success){
+        toast('Deleted from GitHub');
+        refreshGithubList();
+      } else {
+        toast('Delete failed: ' + (data.error || 'unknown'), false);
+      }
+    }catch(err){ console.error(err); toast('Delete request failed', false); }
+  } else if(action === 'import'){
+    if(!confirm('Import this repo file into runtime uploads?')) return;
+    try{
+      const res = await fetch('/admin/github/import', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ path: path })
+      });
+      const data = await res.json();
+      if(res.ok && data.success){
+        toast('Imported to runtime gallery');
+        // optionally add card to runtime list (naive append)
+        const gid = 'card-' + (data.id || ('new-'+Date.now()));
+        const html = `<div id="${gid}" class="border rounded p-2 flex items-center gap-3">
+                        <img src="/uploads/${data.filename}" class="w-20 h-16 object-cover rounded" />
+                        <div class="flex-1"><div class="text-sm text-gray-700">${data.caption || '—'}</div></div>
+                        <div class="flex flex-col gap-2">
+                          <button data-id="${data.id || ''}" class="replace-btn px-3 py-1 bg-yellow-500 text-white rounded text-sm">Replace</button>
+                          <button data-id="${data.id || ''}" class="delete-btn px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
+                        </div>
+                      </div>`;
+        document.getElementById('galleryGrid')?.insertAdjacentHTML('afterbegin', html);
+      } else {
+        toast('Import failed: ' + (data.error||'unknown'), false);
+      }
+    }catch(err){ console.error(err); toast('Import request failed', false); }
+  }
+});
+
+/* Batch actions */
+document.getElementById('deleteSelected')?.addEventListener('click', async function(){
+  const checked = Array.from(document.querySelectorAll('.gh-chk:checked')).map(cb => cb.getAttribute('data-path'));
+  if(!checked.length) { toast('No files selected', false); return; }
+  if(!confirm(`Delete ${checked.length} file(s) from GitHub?`)) return;
+  try{
+    const res = await fetch('/admin/github/delete_batch', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ paths: checked })
+    });
+    const data = await res.json();
+    if(res.ok && data.success){
+      toast('Deleted selected files');
+      refreshGithubList();
+    } else {
+      toast('Batch delete failed', false);
+    }
+  }catch(err){ console.error(err); toast('Batch delete failed', false); }
+});
+
+document.getElementById('importSelected')?.addEventListener('click', async function(){
+  const checked = Array.from(document.querySelectorAll('.gh-chk:checked')).map(cb => cb.getAttribute('data-path'));
+  if(!checked.length) { toast('No files selected', false); return; }
+  if(!confirm(`Import ${checked.length} file(s) into runtime uploads?`)) return;
+  for(const path of checked){
+    try{
+      const res = await fetch('/admin/github/import', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ path: path })
+      });
+      const data = await res.json();
+      if(res.ok && data.success){
+        // optional: append thumbnail like single import
+      } else {
+        toast('Import failed for: '+path, false);
+      }
+    }catch(err){
+      console.error(err);
+      toast('Import request failed for: '+path, false);
+    }
+  }
+  toast('Import requests sent');
+  refreshGithubList();
+});
+
+/* Initialize */
+refreshGithubList();
 </script>
 {% endif %}
 {% endblock %}
