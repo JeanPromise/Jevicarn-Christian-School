@@ -1,18 +1,46 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="min-h-screen bg-gray-50 p-6">
-  <div class="max-w-6xl mx-auto bg-white p-6 rounded-2xl shadow">
+<style>
+  /* Hide site header/hero/footer that come from base.html so admin is uncluttered */
+  header, .site-header, nav, .hero, .masthead, .topbar, footer, .site-footer {
+    display: none !important;
+  }
+
+  /* Admin container tweaks */
+  .admin-wrapper { max-width: 1200px; margin: 0 auto; }
+  /* Thumbnails: consistent small squares */
+  .thumb-img { width:100%; height:110px; object-fit:cover; border-radius:8px; display:block; }
+  .card-check:focus + img { outline: 2px solid #60a5fa; }
+  .thumb-card { transition: box-shadow .12s, transform .08s; }
+  .thumb-card.ring { box-shadow: 0 0 0 3px rgba(99,102,241,.12); transform: translateY(-2px); }
+  /* spinner overlay */
+  .uploader-overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; background:rgba(0,0,0,.35); }
+  .spinner { width:48px; height:48px; border-radius:50%; border:6px solid rgba(255,255,255,.15); border-top-color:white; animation:spin 1s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  /* lightbox */
+  .lightbox { position: fixed; inset:0; display:none; z-index:70; align-items:center; justify-content:center; background: rgba(0,0,0,.85); }
+  .lightbox img { max-width:92%; max-height:88%; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+  .lightbox .close, .lightbox .nav { position: absolute; color:white; font-size:30px; cursor:pointer; user-select:none; }
+  .lightbox .close { top:18px; right:28px; }
+  .lightbox .nav.left { left:18px; top:50%; transform:translateY(-50%); }
+  .lightbox .nav.right { right:18px; top:50%; transform:translateY(-50%); }
+  /* small helpers */
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+</style>
+
+<div class="min-h-screen bg-gray-50 p-6 admin-wrapper">
+  <div class="bg-white p-6 rounded-2xl shadow">
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-blue-900">⚡ Admin Control — Jevicarn</h1>
+      <h1 class="text-2xl font-semibold text-sky-800">⚡ Admin — Gallery Manager</h1>
       {% if logged_in %}
       <form method="post" action="{{ url_for('admin_logout') }}">
-        <button class="px-3 py-1 bg-red-500 text-white rounded text-sm">Logout</button>
+        <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Logout</button>
       </form>
       {% endif %}
     </div>
 
     {% if register_mode %}
-      <!-- One-time registration -->
       <div class="max-w-md mx-auto p-6 bg-green-50 rounded-lg shadow">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -24,18 +52,17 @@
           {% endif %}
         {% endwith %}
         <form method="post" action="{{ url_for('admin_register') }}">
-          <label class="block mb-2 font-semibold">Username</label>
+          <label class="block mb-2">Username</label>
           <input name="username" class="w-full p-2 rounded border" required />
-          <label class="block mt-4 mb-2 font-semibold">Password</label>
+          <label class="block mt-4 mb-2">Password</label>
           <input name="password" type="password" class="w-full p-2 rounded border" required />
-          <label class="block mt-4 mb-2 font-semibold">Confirm</label>
+          <label class="block mt-4 mb-2">Confirm</label>
           <input name="password2" type="password" class="w-full p-2 rounded border" required />
           <div class="mt-4 text-right"><button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Create Admin</button></div>
         </form>
       </div>
 
     {% elif not logged_in %}
-      <!-- Login -->
       <div class="max-w-md mx-auto p-6 bg-blue-50 rounded-lg shadow">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -47,162 +74,109 @@
           {% endif %}
         {% endwith %}
         <form method="post" action="{{ url_for('admin_login') }}">
-          <label class="block mb-2 font-semibold">Username</label>
+          <label class="block mb-2">Username</label>
           <input name="username" class="w-full p-2 rounded border" required />
-          <label class="block mt-4 mb-2 font-semibold">Password</label>
+          <label class="block mt-4 mb-2">Password</label>
           <input name="password" type="password" class="w-full p-2 rounded border" required />
           <div class="mt-4 text-right"><button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Log in</button></div>
         </form>
       </div>
 
     {% else %}
-      <!-- ADMIN ACTION UI -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- VISITORS PANEL -->
-        <section class="lg:col-span-1 bg-white p-4 rounded-lg border shadow-sm">
-          <h2 class="text-lg font-semibold mb-2">Visitors / Users</h2>
-          <p class="text-sm text-gray-600 mb-3">Recent visitors and message counts (admin-only).</p>
+      <!-- toolbar -->
+      <div class="flex gap-3 items-center mb-4">
+        <form id="uploadForm" method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="flex gap-2 items-center">
+          <label class="bg-sky-600 text-white px-3 py-2 rounded cursor-pointer">
+            <input id="upload_input" type="file" name="file" accept="image/*" class="sr-only" required>
+            Upload
+          </label>
+          <input id="upload_caption" name="caption" placeholder="Caption (optional)" class="p-2 border rounded" />
+          <button id="uploadBtn" type="button" class="px-3 py-2 bg-blue-600 text-white rounded">Add</button>
+        </form>
 
-          <div class="grid grid-cols-2 gap-2 mb-3">
-            <div class="p-3 rounded border bg-gray-50 text-center">
-              <div class="text-xs text-gray-500">Total messages</div>
-              <div class="font-bold text-lg">{{ total_msgs or 0 }}</div>
-            </div>
-            <div class="p-3 rounded border bg-gray-50 text-center">
-              <div class="text-xs text-gray-500">Unique users</div>
-              <div class="font-bold text-lg">{{ total_users or 0 }}</div>
-            </div>
-          </div>
+        <button id="syncExistingBtn" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm">Sync existing static images</button>
 
-          <div class="overflow-auto max-h-64">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-gray-100 sticky top-0">
-                <tr>
-                  <th class="px-3 py-2">User</th>
-                  <th class="px-3 py-2">Messages</th>
-                  <th class="px-3 py-2">Platform</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for s in top_senders %}
-                <tr class="border-b">
-                  <td class="px-3 py-2">{{ s[0] }}</td>
-                  <td class="px-3 py-2">{{ s[1] }}</td>
-                  <td class="px-3 py-2">—</td>
-                </tr>
-                {% endfor %}
-                {% for v in visitors %}
-                <tr class="border-b">
-                  <td class="px-3 py-2">{{ v.name }}</td>
-                  <td class="px-3 py-2">—</td>
-                  <td class="px-3 py-2">{{ v.platform }}</td>
-                </tr>
-                {% endfor %}
-                {% if not top_senders and not visitors %}
-                <tr><td colspan="3" class="px-3 py-6 text-gray-500 text-center">No visitor data yet.</td></tr>
-                {% endif %}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- GALLERY PANEL (center) -->
-        <section class="lg:col-span-2 bg-white p-4 rounded-lg border shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">Gallery — manage images</h2>
-            <div class="text-sm text-gray-500">Select one image to Replace or Delete. Select many to Delete.</div>
-          </div>
-
-          <!-- upload new -->
-          <form id="uploadForm" method="post" action="{{ url_for('admin_gallery_upload') }}" enctype="multipart/form-data" class="mb-4">
-            <div class="flex gap-2">
-              <input type="file" name="file" accept="image/*" required class="p-2 border rounded w-1/3" />
-              <input name="caption" placeholder="Caption (optional)" class="p-2 border rounded flex-1" />
-              <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded">Add image</button>
-            </div>
-          </form>
-
-          <!-- action toolbar -->
-          <div class="flex items-center gap-3 mb-3">
-            <button id="syncExistingBtn" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm">Sync existing static images</button>
-            <button id="deleteSelectedBtn" class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-60" disabled>Delete selected</button>
-            <button id="replaceSelectedBtn" class="px-3 py-2 bg-yellow-500 text-white rounded disabled:opacity-60" disabled>Replace selected</button>
-            <div class="ml-auto text-xs text-gray-500">Tip: click image to toggle selection</div>
-          </div>
-
-          <!-- gallery grid -->
-          <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {% if gallery_items %}
-              {% for it in gallery_items %}
-              <div class="relative border rounded p-2 flex flex-col items-stretch" data-id="{{ it.id }}">
-                <label class="cursor-pointer">
-                  <input type="checkbox" class="card-check sr-only" data-id="{{ it.id }}">
-                  <img src="{{ url_for('uploaded_file', filename=it.filename) }}" alt="" class="w-full h-40 object-cover rounded select-none" />
-                </label>
-
-                <div class="mt-2 flex items-center justify-between gap-2">
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm text-gray-700 truncate">{{ it.caption or '—' }}</div>
-                    <div class="text-xs text-gray-500">{{ it.created_at }}</div>
-                  </div>
-                  <div class="flex flex-col gap-2 ml-2">
-                    <button data-id="{{ it.id }}" class="single-replace-btn px-3 py-1 bg-yellow-500 text-white rounded text-sm">Replace</button>
-                    <button data-id="{{ it.id }}" class="single-delete-btn px-3 py-1 bg-red-600 text-white rounded text-sm">Delete</button>
-                  </div>
-                </div>
-              </div>
-              {% endfor %}
-            {% else %}
-              <div class="text-gray-500 p-6">No images uploaded yet.</div>
-            {% endif %}
-          </div>
-        </section>
-      </div>
-
-      <!-- REPLACE MODAL -->
-      <div id="replaceModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
-        <div class="bg-white rounded-lg p-4 w-full max-w-md">
-          <h3 class="font-semibold mb-2">Replace image</h3>
-          <form id="replaceForm">
-            <input type="hidden" id="replace_target_id" name="id" />
-            <div class="mb-2">
-              <input id="replace_file" type="file" name="file" accept="image/*" required class="w-full" />
-            </div>
-            <div class="flex justify-end gap-2">
-              <button type="button" id="replaceCancel" class="px-3 py-1 rounded border">Cancel</button>
-              <button type="submit" class="px-3 py-1 bg-yellow-600 text-white rounded">Replace</button>
-            </div>
-          </form>
+        <div class="ml-auto flex gap-2 items-center">
+          <button id="deleteSelectedBtn" class="px-3 py-2 bg-red-600 text-white rounded disabled:opacity-60" disabled>Delete selected</button>
+          <button id="replaceSelectedBtn" class="px-3 py-2 bg-yellow-500 text-white rounded disabled:opacity-60" disabled>Replace selected</button>
         </div>
       </div>
 
-      <!-- toast -->
-      <div id="toast" class="fixed right-6 bottom-6 hidden p-3 rounded shadow text-sm"></div>
+      <!-- grid -->
+      <div id="galleryGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {% if gallery_items %}
+          {% for it in gallery_items %}
+          <div class="thumb-card border rounded p-1 bg-white" data-id="{{ it.id }}" data-fname="{{ it.filename }}">
+            <label class="cursor-pointer block relative">
+              <input class="card-check sr-only" type="checkbox" data-id="{{ it.id }}">
+              <img class="thumb-img" src="{{ url_for('uploaded_file', filename=it.filename) }}" alt="thumb-{{ it.id }}" loading="lazy">
+            </label>
+            <div class="mt-2 flex items-center justify-between gap-2">
+              <div class="text-xs text-gray-700 truncate">{{ it.caption or '—' }}</div>
+              <div class="flex flex-col gap-1 ml-2">
+                <button data-id="{{ it.id }}" class="single-replace-btn px-2 py-0.5 bg-yellow-500 text-white rounded text-xs">Replace</button>
+                <button data-id="{{ it.id }}" class="single-delete-btn px-2 py-0.5 bg-red-600 text-white rounded text-xs">Delete</button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-gray-500 p-6">No images uploaded yet.</div>
+        {% endif %}
+      </div>
 
+      <!-- uploader overlay spinner -->
+      <div id="uploaderOverlay" class="uploader-overlay">
+        <div>
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <!-- lightbox -->
+      <div id="lightbox" class="lightbox">
+        <span class="close" title="close">&times;</span>
+        <span class="nav left" title="previous">&#10094;</span>
+        <img id="lightboxImg" src="" alt="preview">
+        <span class="nav right" title="next">&#10095;</span>
+      </div>
     {% endif %}
   </div>
 </div>
 
 {% if logged_in %}
 <script>
-/* Minimal, friendly JS to support selection + single/multi actions */
-/* Utility: toast */
-function toast(msg, ok=true){
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = '';
-  el.classList.add('fixed','right-6','bottom-6','p-3','rounded','shadow','text-sm');
-  el.classList.add(ok ? 'bg-green-100' : 'bg-red-100');
-  el.style.display = 'block';
-  setTimeout(()=> el.style.display = 'none', 3000);
-}
+/* -------------------------
+  Admin gallery JS (friendly)
+   - small thumbnails
+   - clicking thumb opens lightbox
+   - Replace button -> file chooser -> AJAX upload with spinner
+   - Upload form uses XHR with progress spinner
+   - Multi-delete works
+---------------------------*/
 
-/* Selection logic */
+/* helpers */
+const toast = (msg, ok=true) => {
+  // minimal toast using alert fallback
+  try {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = '';
+    t.classList.add('fixed','right-6','bottom-6','p-3','rounded','shadow','text-sm');
+    t.classList.add(ok ? 'bg-green-100' : 'bg-red-100');
+    t.style.display = 'block';
+    setTimeout(()=> t.style.display='none', 2800);
+  } catch(e){ console.log(msg); }
+};
+const overlay = document.getElementById('uploaderOverlay');
+function showSpinner(){ overlay && (overlay.style.display='flex'); }
+function hideSpinner(){ overlay && (overlay.style.display='none'); }
+
+/* selection */
 const galleryGrid = document.getElementById('galleryGrid');
+let selected = new Set();
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const replaceSelectedBtn = document.getElementById('replaceSelectedBtn');
 const syncExistingBtn = document.getElementById('syncExistingBtn');
-let selected = new Set();
 
 function updateToolbar(){
   const n = selected.size;
@@ -210,48 +184,48 @@ function updateToolbar(){
   replaceSelectedBtn.disabled = n !== 1;
 }
 
-/* Toggle checkbox when clicking card image */
+/* click on card: toggle selection unless clicking a button */
 galleryGrid?.addEventListener('click', (e) => {
-  // find the card element
   const card = e.target.closest('[data-id]');
   if(!card) return;
-  // if user clicked the individual action buttons, let those handlers run
-  if(e.target.closest('.single-delete-btn') || e.target.closest('.single-replace-btn') || e.target.closest('button')) return;
-
+  // ignore if a control button was clicked
+  if(e.target.closest('button')) return;
   const id = card.getAttribute('data-id');
   const checkbox = card.querySelector('.card-check');
   if(!checkbox) return;
   checkbox.checked = !checkbox.checked;
-  if(checkbox.checked) selected.add(id); else selected.delete(id);
-  card.classList.toggle('ring-2', checkbox.checked);
+  if(checkbox.checked){ selected.add(id); card.classList.add('ring'); }
+  else { selected.delete(id); card.classList.remove('ring'); }
   updateToolbar();
 });
 
-/* Keep selected state when user clicks the visible checkboxes */
+/* checkbox change handlers */
 galleryGrid?.querySelectorAll('.card-check')?.forEach(cb => {
   cb.addEventListener('change', (e) => {
     const id = cb.getAttribute('data-id');
     const card = cb.closest('[data-id]');
-    if(cb.checked) { selected.add(id); card.classList.add('ring-2'); }
-    else { selected.delete(id); card.classList.remove('ring-2'); }
+    if(cb.checked){ selected.add(id); card.classList.add('ring'); }
+    else { selected.delete(id); card.classList.remove('ring'); }
     updateToolbar();
   });
 });
 
-/* Single-delete button */
+/* single-delete and delete-selected using AJAX endpoint */
 galleryGrid?.addEventListener('click', async (e) => {
   const btn = e.target.closest('.single-delete-btn');
   if(!btn) return;
   const id = btn.getAttribute('data-id');
   if(!confirm('Delete this image?')) return;
-  try {
+  try{
+    showSpinner();
     const res = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ id: id })
     });
-    const payload = await res.json();
-    if(res.ok && payload.success){
+    const data = await res.json();
+    hideSpinner();
+    if(res.ok && data.success){
       document.querySelector(`[data-id="${id}"]`)?.remove();
       selected.delete(id);
       updateToolbar();
@@ -259,120 +233,206 @@ galleryGrid?.addEventListener('click', async (e) => {
     } else {
       toast('Delete failed', false);
     }
-  } catch(err){ console.error(err); toast('Delete request failed', false); }
+  } catch(err){
+    hideSpinner();
+    console.error(err); toast('Delete request failed', false);
+  }
 });
 
-/* Single-replace button */
-galleryGrid?.addEventListener('click', (e) => {
-  const btn = e.target.closest('.single-replace-btn');
-  if(!btn) return;
-  const id = btn.getAttribute('data-id');
-  openReplaceModal(id);
-});
-
-/* Delete selected (many) */
 deleteSelectedBtn?.addEventListener('click', async () => {
-  if(selected.size === 0) { toast('No images selected', false); return; }
+  if(selected.size === 0){ toast('No images selected', false); return; }
   if(!confirm(`Delete ${selected.size} image(s)?`)) return;
   const ids = Array.from(selected);
+  showSpinner();
   for(const id of ids){
     try{
       const res = await fetch('{{ url_for("admin_gallery_delete_ajax") }}', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ id: id })
       });
-      const payload = await res.json();
-      if(res.ok && payload.success){
-        document.querySelector(`[data-id="${id}"]`)?.remove();
-        selected.delete(id);
-      } else {
-        toast('Failed to delete some items', false);
-      }
-    } catch(err){
-      console.error(err);
-      toast('Delete requests failed', false);
-      break;
-    }
+      const data = await res.json();
+      if(res.ok && data.success){ document.querySelector(`[data-id="${id}"]`)?.remove(); selected.delete(id); }
+    } catch(e){ console.error(e); }
   }
+  hideSpinner();
   updateToolbar();
   toast('Selected deletes processed');
 });
 
-/* Replace selected (only when exactly one selected) */
-replaceSelectedBtn?.addEventListener('click', () => {
-  if(selected.size !== 1) { toast('Select exactly one image to replace', false); return; }
-  const id = Array.from(selected)[0];
-  openReplaceModal(id);
+/* ---------------- Replace: immediate file chooser per card ----------------
+   We'll create a single hidden file input to reuse; when Replace clicked we set currentId and trigger click.
+   On file selection we send XHR (so we can show upload progress) to /admin/gallery/replace_ajax
+-------------------------------------------------------------------------*/
+let replaceTargetId = null;
+const hiddenReplaceInput = document.createElement('input');
+hiddenReplaceInput.type = 'file';
+hiddenReplaceInput.accept = 'image/*';
+hiddenReplaceInput.style.display = 'none';
+document.body.appendChild(hiddenReplaceInput);
+
+galleryGrid?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.single-replace-btn');
+  if(!btn) return;
+  replaceTargetId = btn.getAttribute('data-id');
+  hiddenReplaceInput.value = ''; // reset
+  hiddenReplaceInput.click();
 });
 
-/* Replace modal */
-const replaceModal = document.getElementById('replaceModal');
-const replaceForm = document.getElementById('replaceForm');
-function openReplaceModal(id){
-  document.getElementById('replace_target_id').value = id;
-  document.getElementById('replace_file').value = '';
-  replaceModal.classList.remove('hidden');
-  replaceModal.classList.add('flex');
-}
-function closeReplaceModal(){
-  replaceModal.classList.add('hidden');
-  replaceModal.classList.remove('flex');
-}
-document.getElementById('replaceCancel')?.addEventListener('click', closeReplaceModal);
-
-/* Replace submit */
-replaceForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const id = document.getElementById('replace_target_id').value;
-  const fileInput = document.getElementById('replace_file');
-  if(!fileInput.files.length) { toast('Choose a file', false); return; }
+hiddenReplaceInput.addEventListener('change', async () => {
+  if(!hiddenReplaceInput.files.length) return;
+  const file = hiddenReplaceInput.files[0];
   const fd = new FormData();
-  fd.append('id', id);
-  fd.append('file', fileInput.files[0]);
-  try {
-    const resp = await fetch('{{ url_for("admin_gallery_replace_ajax") }}', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if(resp.ok && data.success){
-      // update the image src in the card
-      const card = document.querySelector(`[data-id="${id}"]`);
-      if(card){
-        const img = card.querySelector('img');
-        if(img) img.src = '/uploads/' + data.filename + '?t=' + Date.now();
+  fd.append('id', replaceTargetId);
+  fd.append('file', file);
+
+  // XHR to show progress
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '{{ url_for("admin_gallery_replace_ajax") }}', true);
+  xhr.onloadstart = () => { showSpinner(); };
+  xhr.upload.onprogress = (ev) => {
+    // optional: you could show percent; we keep simple spinner
+  };
+  xhr.onreadystatechange = () => {
+    if(xhr.readyState === 4){
+      hideSpinner();
+      try {
+        const res = JSON.parse(xhr.responseText || '{}');
+        if(xhr.status >= 200 && xhr.status < 300 && res.success){
+          // update thumbnail src
+          const card = document.querySelector(`[data-id="${replaceTargetId}"]`);
+          if(card){
+            const img = card.querySelector('img');
+            if(img) img.src = '/uploads/' + res.filename + '?t=' + Date.now();
+          }
+          toast('Image replaced');
+        } else {
+          toast('Replace failed', false);
+          console.error(res);
+        }
+      } catch(err){
+        console.error(err); toast('Unexpected response', false);
       }
-      closeReplaceModal();
-      toast('Image replaced');
-    } else {
-      toast('Replace failed', false);
     }
-  } catch(err){ console.error(err); toast('Replace request failed', false); }
+  };
+  xhr.send(fd);
 });
 
-/* Sync existing static images -> gallery DB */
+/* Replace selected toolbar: open file chooser too */
+replaceSelectedBtn?.addEventListener('click', () => {
+  if(selected.size !== 1){ toast('Select exactly one image to replace', false); return; }
+  replaceTargetId = Array.from(selected)[0];
+  hiddenReplaceInput.value = '';
+  hiddenReplaceInput.click();
+});
+
+/* ---------------- Upload form: intercept to use XHR with spinner ---------------- */
+const uploadInput = document.getElementById('upload_input');
+const uploadCaption = document.getElementById('upload_caption');
+const uploadBtn = document.getElementById('uploadBtn');
+
+uploadBtn?.addEventListener('click', () => uploadInput.click());
+
+uploadInput?.addEventListener('change', () => {
+  if(!uploadInput.files.length) return;
+  const file = uploadInput.files[0];
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('caption', uploadCaption.value || '');
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '{{ url_for("admin_gallery_upload") }}', true);
+  xhr.onloadstart = () => showSpinner();
+  xhr.upload.onprogress = (ev) => {
+    // we keep spinner — could show percent if desired
+  };
+  xhr.onreadystatechange = () => {
+    if(xhr.readyState === 4){
+      hideSpinner();
+      if(xhr.status >= 200 && xhr.status < 400){
+        // successful upload causes a redirect in normal flow; but here app returns redirect.
+        // Reload admin page to show new image (simple and reliable).
+        toast('Uploaded — refreshing');
+        setTimeout(()=> location.reload(), 600);
+      } else {
+        toast('Upload failed', false);
+        console.error(xhr.responseText);
+      }
+    }
+  };
+  xhr.send(fd);
+});
+
+/* ---------------- Lightbox preview ---------------- */
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+const lbClose = lightbox?.querySelector('.close');
+const lbPrev = lightbox?.querySelector('.nav.left');
+const lbNext = lightbox?.querySelector('.nav.right');
+
+let lbIndex = -1;
+function buildImageList(){
+  const cards = Array.from(document.querySelectorAll('[data-id]'));
+  return cards.map(c => {
+    const id = c.getAttribute('data-id');
+    const img = c.querySelector('img');
+    return { id, src: img?.src, el: c };
+  });
+}
+function openLightboxBySrc(src){
+  const list = buildImageList();
+  lbIndex = list.findIndex(i => i.src === src);
+  if(lbIndex < 0) lbIndex = 0;
+  lightboxImg.src = list[lbIndex].src;
+  lightbox.style.display = 'flex';
+}
+galleryGrid?.addEventListener('click', (e) => {
+  // if user clicked the image itself (not the card overall or button)
+  if(e.target.tagName === 'IMG'){
+    openLightboxBySrc(e.target.src);
+  }
+});
+lbClose?.addEventListener('click', ()=> lightbox.style.display='none');
+lbPrev?.addEventListener('click', ()=> {
+  const list = buildImageList();
+  lbIndex = (lbIndex - 1 + list.length) % list.length;
+  lightboxImg.src = list[lbIndex].src;
+});
+lbNext?.addEventListener('click', ()=> {
+  const list = buildImageList();
+  lbIndex = (lbIndex + 1) % list.length;
+  lightboxImg.src = list[lbIndex].src;
+});
+document.addEventListener('keydown', (e) => {
+  if(lightbox.style.display === 'flex'){
+    if(e.key === 'Escape') lightbox.style.display='none';
+    if(e.key === 'ArrowLeft') lbPrev.click();
+    if(e.key === 'ArrowRight') lbNext.click();
+  }
+});
+
+/* ---------------- Sync existing static images ---------------- */
 syncExistingBtn?.addEventListener('click', async () => {
-  if(!confirm('Scan static/uploads for files and import any missing images into the gallery DB?')) return;
+  if(!confirm('Scan static/uploads and import any missing images into gallery DB?')) return;
   try{
-    const res = await fetch('/admin/gallery/sync', { method: 'POST' });
+    showSpinner();
+    const res = await fetch('{{ url_for("admin_gallery_sync") }}', { method:'POST' });
     const data = await res.json();
+    hideSpinner();
     if(res.ok && data.success){
-      toast(`Imported ${data.imported} image(s)`);
+      toast(`Imported ${data.imported} images`);
       setTimeout(()=> location.reload(), 700);
     } else {
       toast('Sync failed', false);
       console.error(data);
     }
   } catch(err){
-    console.error(err);
-    toast('Sync request failed', false);
+    hideSpinner();
+    console.error(err); toast('Sync request failed', false);
   }
 });
 
-/* keyboard: escape closes modal */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape') closeReplaceModal();
-});
-
-/* init toolbar state */
+/* init */
 updateToolbar();
 </script>
 {% endif %}
