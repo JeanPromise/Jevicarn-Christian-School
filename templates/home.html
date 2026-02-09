@@ -1,7 +1,3 @@
-<!--
-  File: templates/home.html
-  Put this in templates/home.html (replace your existing home.html). It uses the new layout and classes.
--->
 {% extends 'base.html' %}
 {% block content %}
 
@@ -24,10 +20,17 @@
       </ul>
     </div>
 
-    <div class="hero-media card">
+    <div class="hero-media card" aria-hidden="false" role="img" aria-label="Children playing at Jevicarn">
       <picture>
+        <!-- preferred local webp if present -->
         <source srcset="{{ url_for('static', filename='uploads/hero-example.webp') }}" type="image/webp">
-        <img src="{{ url_for('static', filename='uploads/hero-example.jpg') }}" alt="Children playing at Jevicarn" loading="lazy">
+        <!-- local jpg fallback with GitHub raw fallback if file not served -->
+        <img
+          src="{{ url_for('static', filename='uploads/hero-example.jpg') }}"
+          alt="Children playing at Jevicarn"
+          loading="lazy"
+          decoding="async"
+          onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/JeanPromise/Jevicarn-Christian-School/main/static/uploads/hero-example.jpg';">
       </picture>
     </div>
   </div>
@@ -40,19 +43,19 @@
 
   <div class="enroll-features">
     <div class="feature-box">
-      <i class="fa-solid fa-child-reaching icon"></i>
+      <i class="fa-solid fa-child-reaching icon" aria-hidden="true"></i>
       <h4>Fun & Engaging Learning</h4>
     </div>
     <div class="feature-box">
-      <i class="fa-solid fa-hand-holding-heart icon"></i>
+      <i class="fa-solid fa-hand-holding-heart icon" aria-hidden="true"></i>
       <h4>Safe & Nurturing</h4>
     </div>
     <div class="feature-box">
-      <i class="fa-solid fa-chalkboard-user icon"></i>
+      <i class="fa-solid fa-chalkboard-user icon" aria-hidden="true"></i>
       <h4>Qualified Teachers</h4>
     </div>
     <div class="feature-box">
-      <i class="fa-solid fa-palette icon"></i>
+      <i class="fa-solid fa-palette icon" aria-hidden="true"></i>
       <h4>Play-Based Curriculum</h4>
     </div>
   </div>
@@ -65,30 +68,30 @@
 
 <!-- PROGRAMS -->
 <section class="programs container card" style="margin-top:36px;">
-  <h2 style="color:#23303B; font-size:1.6rem; font-weight:800;">Our Programs</h2>
+  <h2 style="color:var(--text); font-size:1.6rem; font-weight:800;">Our Programs</h2>
   <p class="muted" style="max-width:700px;margin:8px auto;">We provide care and education for every stage — from the littlest learners to early school-age children.</p>
 
   <div class="programs-grid" style="margin-top:18px;">
     <div class="program-box">
-      <i class="fa-solid fa-baby icon" style="font-size:2rem;color:var(--accent);"></i>
+      <i class="fa-solid fa-baby icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
       <h3>Daycare</h3>
       <p>For ages 1–3. Warm care, nap time, playtime, and gentle introduction to learning.</p>
     </div>
 
     <div class="program-box">
-      <i class="fa-solid fa-school icon" style="font-size:2rem;color:var(--accent);"></i>
+      <i class="fa-solid fa-school icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
       <h3>Kindergarten</h3>
       <p>For ages 3–6. Fun, creative, and faith-based early learning to prepare for primary school.</p>
     </div>
 
     <div class="program-box">
-      <i class="fa-solid fa-pencil-alt icon" style="font-size:2rem;color:var(--accent);"></i>
+      <i class="fa-solid fa-pencil-alt icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
       <h3>Primary School</h3>
       <p>Competency-based education with caring teachers and small class sizes for focus and growth.</p>
     </div>
 
     <div class="program-box">
-      <i class="fa-solid fa-moon icon" style="font-size:2rem;color:var(--accent);"></i>
+      <i class="fa-solid fa-moon icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
       <h3>Nightcare</h3>
       <p>For working parents. Safe overnight care with calm routines, sleep monitoring, and meals.</p>
     </div>
@@ -99,7 +102,7 @@
 
 <!-- TRANSPORT -->
 <section class="transport container card" style="margin-top:32px;text-align:center;">
-  <h2 style="color:#23303B;">Safe School Transport</h2>
+  <h2 style="color:var(--text);">Safe School Transport</h2>
   <p class="muted" style="max-width:650px;margin:auto;font-size:1.02rem;">Reliable pickup and drop-off for nearby estates — safe, insured drivers and friendly assistants.</p>
 
   <div class="transport-grid" style="margin-top:18px;">
@@ -112,7 +115,7 @@
 
 <!-- LOCATION -->
 <section class="location container" style="margin-top:32px;text-align:center;">
-  <h2 style="color:#23303B;">Find Us</h2>
+  <h2 style="color:var(--text);">Find Us</h2>
   <p class="muted" style="max-width:700px;margin:auto;font-size:1.02rem;">We are located at <strong>Ebenezer Centre near Faida Ndogo, Juja, Kiambu County</strong>.</p>
 
   <iframe src="https://www.google.com/maps?q=Ebenezer+Centre,+Juja,+Kiambu+County,+Kenya&output=embed" width="100%" height="300" style="border-radius:12px;margin-top:16px;border:0;" allowfullscreen="" loading="lazy"></iframe>
