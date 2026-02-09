@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-
   <title>Jevicarn Christian Kindergarten & School | Juja, Kenya</title>
-  <meta name="description" content="Jevicarn Christian Kindergarten & School in Juja, Kenya — clear, friendly, and reliable early education.">
+  <meta name="description" content="Jevicarn Christian Kindergarten & School in Juja, Kenya — energetic, trustworthy, and playful early education.">
   <meta name="author" content="Jevicarn Christian Kindergarten & School">
 
   <!-- Social preview -->
@@ -13,97 +12,121 @@
   <meta property="og:description" content="A faith-based school in Juja nurturing bright, kind, and curious learners.">
   <meta property="og:image" content="{{ url_for('static', filename='uploads/hero-example.jpg') }}">
 
-  <!-- Fonts: crisp headings + neutral body -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts: modern headline + very readable body -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <!-- FontAwesome -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
   <style>
     :root{
-      --bg: #ffffff;
-      --surface: #f5f7fb;
-      --card: #ffffff;
-      --text: #07293d;       /* deep navy for contrast */
-      --muted: #566575;
-      --accent: #ff6b35;     /* warm strong accent */
-      --accent-2: #0ba3a3;   /* supporting accent */
-      --radius: 12px;
-      --shadow: 0 10px 30px rgba(7,41,61,0.06);
-      --max-width: 1100px;
+      /* vivid, professional palette */
+      --bg: #0f1724;            /* deep navy (page background) */
+      --surface: #071129;       /* near-black for strong contrast blocks */
+      --card: #0b2130;          /* dark card surface */
+      --text: #f7fbfe;          /* near-white text */
+      --muted: #b6c7d6;         /* readable muted text */
+      --primary: #6f2dbd;       /* electric purple — main brand */
+      --accent: #ff6b35;        /* warm coral accent for CTAs */
+      --accent-2: #00c2a8;      /* fresh teal accent */
+      --glass: rgba(255,255,255,0.04);
+      --radius: 14px;
+      --shadow-lg: 0 18px 50px rgba(8,12,20,0.6);
+      --shadow-sm: 0 8px 22px rgba(2,6,10,0.5);
+      --max-width: 1150px;
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     }
 
+    /* Reset & layout */
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--surface);color:var(--text);-webkit-font-smoothing:antialiased;}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#07162a);color:var(--text);-webkit-font-smoothing:antialiased;}
     a{color:inherit;text-decoration:none}
-    .container{max-width:var(--max-width);margin:0 auto;padding:0 18px}
+    .container{max-width:var(--max-width);margin:0 auto;padding:0 20px}
 
     /* Header */
-    .site-header{position:sticky;top:0;z-index:90;background:var(--card);border-bottom:1px solid rgba(7,41,61,0.04)}
-    .header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .site-header{position:sticky;top:0;z-index:120;background:linear-gradient(90deg, rgba(11,18,36,0.72), rgba(7,14,28,0.72));backdrop-filter: blur(6px);border-bottom:1px solid rgba(255,255,255,0.03)}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;padding:18px 0;gap:18px}
     .brand{display:flex;align-items:center;gap:14px}
-    .logo{width:58px;height:58px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-family:'Poppins',sans-serif;font-size:18px;font-weight:700}
-    .brand-name{font-weight:700;font-size:1rem;color:var(--text)}
-    .tagline{font-size:.82rem;color:var(--muted)}
+    .logo{
+      width:64px;height:64px;border-radius:12px;
+      background: linear-gradient(135deg,var(--primary),var(--accent));
+      display:flex;align-items:center;justify-content:center;color:white;font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;
+      box-shadow:var(--shadow-sm);
+    }
+    .brand-name{font-weight:700;font-size:1.05rem;color:var(--text);letter-spacing:0.1px}
+    .tagline{font-size:.78rem;color:var(--muted);margin-top:2px}
 
-    .nav{display:flex;gap:18px;align-items:center}
-    .nav a{padding:8px 10px;border-radius:8px;font-weight:600;color:var(--muted)}
-    .nav a:hover{background:rgba(7,41,61,0.04);color:var(--text)}
+    /* Navigation */
+    .nav{display:flex;gap:16px;align-items:center}
+    .nav a{padding:8px 12px;border-radius:10px;font-weight:600;color:var(--muted);transition:all .18s ease}
+    .nav a:hover{background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));color:var(--text);transform:translateY(-2px)}
 
-    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;font-weight:700}
-    .btn-primary{background:var(--accent);color:white}
-    .btn-ghost{border:1px solid rgba(7,41,61,0.06);background:transparent}
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 18px;border-radius:12px;font-weight:700;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#ff8a60);color:white;box-shadow:0 12px 30px rgba(255,107,53,0.12);border:0}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .btn-pill{border-radius:999px;padding:10px 20px}
 
-    main{padding:28px 0}
+    /* Top badges (subtle) */
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));color:var(--muted);font-weight:700;font-size:.85rem}
 
-    /* Hero */
-    .hero{padding:28px 0}
-    .hero-grid{display:grid;grid-template-columns:1fr 480px;gap:26px;align-items:center}
-    .hero-text{background:var(--card);padding:28px;border-radius:14px;box-shadow:var(--shadow)}
-    .hero-text h1{font-family:'Poppins',sans-serif;margin:0 0 12px;font-size:2.1rem;line-height:1.02;color:var(--text)}
+    main{padding:36px 0}
+
+    /* Hero (content pages will supply structure) */
+    .hero{padding:24px 0}
+    .hero-grid{display:grid;grid-template-columns:1fr 480px;gap:28px;align-items:center}
+    .hero-text{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));padding:32px;border-radius:16px;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,0.03)}
+    .hero-text h1{font-family:'Montserrat',sans-serif;margin:0 0 12px;font-size:2.2rem;line-height:1.03;color:var(--text);letter-spacing:0.2px}
     .hero-text .accent{color:var(--accent)}
     .lead{color:var(--muted);font-size:1.05rem;margin-bottom:14px}
-    .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
 
-    .hero-media{border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:#fff;display:block}
-    .hero-media img{width:100%;height:100%;object-fit:cover;display:block}
-
+    .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
     .feature-list{display:flex;gap:10px;padding:0;margin:18px 0 0;list-style:none;flex-wrap:wrap}
-    .feature-list li{background:var(--surface);padding:8px 12px;border-radius:999px;font-weight:600;color:var(--muted)}
+    .feature-list li{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:8px 12px;border-radius:999px;font-weight:700;color:var(--muted);font-size:.95rem}
 
-    /* Sections */
+    .hero-media{border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(7,12,20,0.7);display:block;background:linear-gradient(135deg,var(--primary),var(--accent-2))}
+    .hero-media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+    .hero-media:hover img{transform:scale(1.03)}
+
+    /* Cards + sections */
     section.card{background:transparent}
     .enrollment{padding:22px;border-radius:12px}
-    .enroll-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:18px}
-    .feature-box{background:var(--card);padding:16px;border-radius:10px;text-align:center;border:1px solid rgba(7,41,61,0.03)}
-    .feature-box .icon{font-size:28px;color:var(--accent)}
+    .enroll-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-top:18px}
+    .feature-box{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;text-align:center;border:1px solid rgba(255,255,255,0.03)}
+    .feature-box .icon{font-size:30px;color:var(--accent)}
 
     .programs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
-    .program-box{background:var(--card);padding:18px;border-radius:10px;text-align:left;border:1px solid rgba(7,41,61,0.03)}
+    .program-box{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;text-align:left;border:1px solid rgba(255,255,255,0.03)}
     .program-box h3{margin:6px 0;color:var(--text)}
 
-    .transport-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
-    .transport-photo img{width:100%;display:block;border-radius:8px}
+    .transport-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+    .transport-photo img{width:100%;display:block;border-radius:10px}
 
     .gallery-preview .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-    .grid .thumb img{width:100%;height:110px;object-fit:cover;border-radius:8px}
+    .grid .thumb img{width:100%;height:110px;object-fit:cover;border-radius:9px;box-shadow:0 8px 24px rgba(2,6,10,0.5)}
 
     .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-    .why-item{padding:16px;border-radius:10px;background:var(--card);border:1px solid rgba(7,41,61,0.03)}
+    .why-item{padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03)}
 
-    .site-footer{padding:18px 0;margin-top:36px;border-top:1px solid rgba(7,41,61,.04);background:var(--card)}
+    /* Footer - prominent & clear credit */
+    .site-footer{padding:26px 0;margin-top:48px;background:linear-gradient(90deg, rgba(8,10,20,0.6), rgba(6,8,16,0.6));border-top:1px solid rgba(255,255,255,0.02)}
     .site-footer .container{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+    .footer-left{color:var(--muted);font-weight:600}
+    .footer-right{color:var(--muted);font-size:.95rem}
+
+    /* WhatsApp floating */
+    .whatsapp-float{position:fixed;width:64px;height:64px;bottom:22px;right:22px;background:var(--accent-2);color:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;z-index:9999;box-shadow:0 14px 40px rgba(0,194,168,0.18)}
+    .whatsapp-float img{width:28px;height:28px;filter:brightness(0) invert(1)}
 
     /* Responsive */
     @media (max-width:980px){
       .hero-grid{grid-template-columns:1fr}
       .nav{display:none}
-      .mobile-nav-toggle{display:inline-flex}
     }
-
-    .mobile-nav-toggle{display:none;border:0;background:transparent;padding:8px}
-    .mobile-nav{display:none;position:absolute;left:0;right:0;top:72px;background:var(--card);padding:12px;border-radius:10px;box-shadow:var(--shadow)}
+    @media (max-width:640px){
+      .hero-text h1{font-size:1.6rem}
+      .logo{width:52px;height:52px;font-size:16px}
+    }
   </style>
 </head>
 <body>
@@ -126,9 +149,9 @@
         </nav>
 
         <div style="display:flex;align-items:center;gap:12px">
-          <a class="btn btn-primary" href="/contact">Book a Visit</a>
+          <a class="btn btn-primary btn-pill" href="/contact">Book a Visit</a>
 
-          <button class="mobile-nav-toggle" aria-expanded="false" aria-controls="mobileNav" title="Open menu">
+          <button class="mobile-nav-toggle" aria-expanded="false" aria-controls="mobileNav" title="Open menu" style="background:transparent;border:0;color:var(--muted);font-size:18px;">
             <i class="fa fa-bars" aria-hidden="true"></i>
           </button>
         </div>
@@ -146,13 +169,18 @@
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer" role="contentinfo">
       <div class="container">
-        <div>Call / WhatsApp: <strong>+254 781 857 370</strong></div>
-        <div>&copy; {{ current_year }} Jevicarn Christian Kindergarten & School</div>
+        <div class="footer-left">Call / WhatsApp: <strong>+254 781 857 370</strong></div>
+        <div class="footer-right">&copy; {{ current_year }} Jevicarn Christian Kindergarten & School — All rights reserved. Built by <strong>Tomorrow Technology Company</strong>.</div>
       </div>
     </footer>
   </div>
+
+  <!-- WhatsApp floating button -->
+  <a href="https://wa.me/254781857370" class="whatsapp-float" target="_blank" title="Chat with us on WhatsApp" aria-label="Chat on WhatsApp">
+    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp">
+  </a>
 
   <script>
     // Mobile nav toggle
