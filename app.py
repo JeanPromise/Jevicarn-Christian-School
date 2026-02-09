@@ -127,6 +127,9 @@ def require_admin():
 
 # --- Public site routes ---
 @app.route('/')
+def splash():
+    return render_template('tomorrowanimation.html')
+
 @app.route('/home')
 @app.route('/index.html')
 def home():
