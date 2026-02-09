@@ -1,8 +1,3 @@
-<!--
-  File: templates/base.html
-  Put this in templates/base.html (replace your current base.html). It uses Google Fonts,
-  a modern responsive header, improved footer, and variables for easy theming.
--->
 <!doctype html>
 <html lang="en">
 <head>
@@ -10,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <title>Jevicarn Christian Kindergarten & School | Juja, Kenya</title>
-  <meta name="description" content="Jevicarn Christian Kindergarten & School in Juja, Kenya — offering daycare, nightcare, kindergarten, and primary education in a safe, Christian, and nurturing environment.">
+  <meta name="description" content="Jevicarn Christian Kindergarten & School in Juja, Kenya — clear, friendly, and reliable early education.">
   <meta name="author" content="Jevicarn Christian Kindergarten & School">
 
   <!-- Social preview -->
@@ -18,111 +13,98 @@
   <meta property="og:description" content="A faith-based school in Juja nurturing bright, kind, and curious learners.">
   <meta property="og:image" content="{{ url_for('static', filename='uploads/hero-example.jpg') }}">
 
-  <!-- Fonts: playful headline + clean body -->
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Fonts: crisp headings + neutral body -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <!-- FontAwesome (icons) -->
+  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
-  <!-- Main stylesheet (you can extract into static/css/style.css) -->
   <style>
     :root{
-      --bg: #f7fbff;
+      --bg: #ffffff;
+      --surface: #f5f7fb;
       --card: #ffffff;
-      --muted: #5b6b72;
-      --accent: #ff7b00; /* primary brand */
-      --accent-2: #6c63ff; /* secondary playful */
-      --radius: 16px;
-      --glass: rgba(255,255,255,0.6);
-      --shadow: 0 8px 30px rgba(22,25,45,0.06);
+      --text: #07293d;       /* deep navy for contrast */
+      --muted: #566575;
+      --accent: #ff6b35;     /* warm strong accent */
+      --accent-2: #0ba3a3;   /* supporting accent */
+      --radius: 12px;
+      --shadow: 0 10px 30px rgba(7,41,61,0.06);
       --max-width: 1100px;
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     }
 
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#f9fcff,var(--bg));color:#123;}
+    html,body{height:100%;margin:0;background:var(--surface);color:var(--text);-webkit-font-smoothing:antialiased;}
     a{color:inherit;text-decoration:none}
-
     .container{max-width:var(--max-width);margin:0 auto;padding:0 18px}
 
     /* Header */
-    .site-header{position:sticky;top:0;z-index:80;backdrop-filter: blur(6px);background:linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.7));box-shadow:0 2px 10px rgba(12,18,25,.04)}
-    .header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
-
-    .brand{display:flex;align-items:center;gap:12px}
-    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:white;font-family:'Fredoka One',cursive;font-size:20px;box-shadow:var(--shadow)}
-    .brand-name{font-weight:700;font-size:1rem}
-    .tagline{font-size:.8rem;color:var(--muted)}
+    .site-header{position:sticky;top:0;z-index:90;background:var(--card);border-bottom:1px solid rgba(7,41,61,0.04)}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:58px;height:58px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-family:'Poppins',sans-serif;font-size:18px;font-weight:700}
+    .brand-name{font-weight:700;font-size:1rem;color:var(--text)}
+    .tagline{font-size:.82rem;color:var(--muted)}
 
     .nav{display:flex;gap:18px;align-items:center}
-    .nav a{padding:8px 10px;border-radius:10px;font-weight:600;color:var(--muted)}
-    .nav a:hover{background:rgba(108,99,255,0.08);color:var(--accent-2)}
+    .nav a{padding:8px 10px;border-radius:8px;font-weight:600;color:var(--muted)}
+    .nav a:hover{background:rgba(7,41,61,0.04);color:var(--text)}
 
-    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;font-weight:700}
-    .btn-primary{background:linear-gradient(90deg,var(--accent),#ff9a4d);color:white;box-shadow:0 10px 28px rgba(255,123,0,.12)}
-    .btn-ghost{border:1px solid rgba(18,18,18,0.06);background:transparent}
+    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;font-weight:700}
+    .btn-primary{background:var(--accent);color:white}
+    .btn-ghost{border:1px solid rgba(7,41,61,0.06);background:transparent}
 
     main{padding:28px 0}
 
     /* Hero */
     .hero{padding:28px 0}
-    .hero-grid{display:grid;grid-template-columns:1fr 460px;gap:26px;align-items:center}
-    .hero-text{background:linear-gradient(180deg,#fff,rgba(255,255,255,0.9));padding:28px;border-radius:20px;box-shadow:var(--shadow)}
-    .hero-text h1{font-family:'Fredoka One',cursive;margin:0 0 12px;font-size:2rem;line-height:1.05;color:#113}
-    .hero-text .accent{color:var(--accent-2)}
+    .hero-grid{display:grid;grid-template-columns:1fr 480px;gap:26px;align-items:center}
+    .hero-text{background:var(--card);padding:28px;border-radius:14px;box-shadow:var(--shadow)}
+    .hero-text h1{font-family:'Poppins',sans-serif;margin:0 0 12px;font-size:2.1rem;line-height:1.02;color:var(--text)}
+    .hero-text .accent{color:var(--accent)}
     .lead{color:var(--muted);font-size:1.05rem;margin-bottom:14px}
     .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
 
-    .hero-media{border-radius:20px;overflow:hidden;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fdf3ec,#fff)}
+    .hero-media{border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:#fff;display:block}
     .hero-media img{width:100%;height:100%;object-fit:cover;display:block}
 
-    .feature-list{display:flex;gap:10px;padding:0;margin:18px 0 0;list-style:none}
-    .feature-list li{background:linear-gradient(180deg,#fff,rgba(255,255,255,0.95));padding:8px 12px;border-radius:999px;font-weight:600;color:var(--muted);box-shadow:0 6px 18px rgba(12,18,25,0.04)}
+    .feature-list{display:flex;gap:10px;padding:0;margin:18px 0 0;list-style:none;flex-wrap:wrap}
+    .feature-list li{background:var(--surface);padding:8px 12px;border-radius:999px;font-weight:600;color:var(--muted)}
 
-    /* Cards / sections */
+    /* Sections */
     section.card{background:transparent}
-    .enrollment{padding:26px;border-radius:18px;box-shadow:var(--shadow)}
-
+    .enrollment{padding:22px;border-radius:12px}
     .enroll-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:18px}
-    .feature-box{background:linear-gradient(180deg,#fff, rgba(255,255,255,0.95));padding:16px;border-radius:14px;text-align:center;box-shadow:0 8px 22px rgba(12,18,25,0.04)}
+    .feature-box{background:var(--card);padding:16px;border-radius:10px;text-align:center;border:1px solid rgba(7,41,61,0.03)}
     .feature-box .icon{font-size:28px;color:var(--accent)}
 
-    /* Programs */
     .programs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
-    .program-box{background:linear-gradient(180deg,#fff, rgba(250,250,255,1));padding:18px;border-radius:14px;text-align:left;box-shadow:0 10px 28px rgba(8,12,20,0.04)}
-    .program-box h3{margin:6px 0}
+    .program-box{background:var(--card);padding:18px;border-radius:10px;text-align:left;border:1px solid rgba(7,41,61,0.03)}
+    .program-box h3{margin:6px 0;color:var(--text)}
 
-    /* transport / gallery */
     .transport-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
-    .transport-photo img{width:100%;display:block;border-radius:12px}
+    .transport-photo img{width:100%;display:block;border-radius:8px}
 
     .gallery-preview .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-    .grid .thumb img{width:100%;height:110px;object-fit:cover;border-radius:10px}
+    .grid .thumb img{width:100%;height:110px;object-fit:cover;border-radius:8px}
 
-    /* why */
     .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-    .why-item{padding:16px;border-radius:12px;background:linear-gradient(180deg,#fff, #fff7f3);box-shadow:var(--shadow)}
+    .why-item{padding:16px;border-radius:10px;background:var(--card);border:1px solid rgba(7,41,61,0.03)}
 
-    /* footer */
-    .site-footer{padding:22px 0;margin-top:36px;border-top:1px solid rgba(12,18,25,.04);background:transparent}
+    .site-footer{padding:18px 0;margin-top:36px;border-top:1px solid rgba(7,41,61,.04);background:var(--card)}
     .site-footer .container{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:center}
 
-    /* responsive */
+    /* Responsive */
     @media (max-width:980px){
       .hero-grid{grid-template-columns:1fr}
-      .header-inner{gap:12px}
       .nav{display:none}
       .mobile-nav-toggle{display:inline-flex}
     }
 
-    /* mobile nav toggle */
     .mobile-nav-toggle{display:none;border:0;background:transparent;padding:8px}
-    .mobile-nav{display:none;position:absolute;left:0;right:0;top:72px;background:linear-gradient(180deg,white,#fff);padding:12px;border-radius:12px;box-shadow:var(--shadow)}
-
-    /* small pretties */
-    .muted{color:var(--muted)}
+    .mobile-nav{display:none;position:absolute;left:0;right:0;top:72px;background:var(--card);padding:12px;border-radius:10px;box-shadow:var(--shadow)}
   </style>
-
 </head>
 <body>
   <div class="site-wrap">
@@ -180,11 +162,9 @@
       toggle.addEventListener('click',()=>{
         const open = toggle.getAttribute('aria-expanded') === 'true';
         toggle.setAttribute('aria-expanded', String(!open));
-        if(open){ mobile.hidden = true; } else { mobile.hidden = false; }
+        mobile.hidden = open;
       });
     }
   </script>
 </body>
 </html>
-
-
