@@ -2,145 +2,167 @@
 {% block content %}
 
 <!-- HERO SECTION -->
-<section class="hero container">
-  <div class="hero-grid">
+<section class="hero">
+  <div class="container hero-grid">
     <div class="hero-text card">
       <h1>Where little minds <span class="accent">grow</span> big dreams</h1>
-      <p class="lead">At <strong>Jevicarn Christian Kindergarten & School</strong>, we nurture curiosity, creativity, and kindness through playful, faith-centered learning.</p>
-
+      <p class="lead">
+        At Jevicarn Christian Kindergarten & School, we nurture curiosity, creativity, and kindness through playful learning.
+      </p>
       <div class="cta-row">
-        <a href="/contact" class="btn btn-primary">Book a Visit</a>
+        <a href="/contact" class="btn btn-primary large">Book a Visit</a>
         <a href="/gallery" class="btn btn-ghost">See Photos</a>
       </div>
-
-      <ul class="feature-list" aria-hidden="false">
-        <li>Small, caring groups</li>
-        <li>Qualified, nurturing teachers</li>
-        <li>Daily photo updates for parents</li>
+      <ul class="feature-list">
+        <li>Small caring groups</li>
+        <li>Qualified teachers</li>
+        <li>Daily photo updates</li>
       </ul>
     </div>
 
-    <div class="hero-media card" aria-hidden="false" role="img" aria-label="Children playing at Jevicarn">
-      <picture>
-        <!-- preferred local webp if present -->
-        <source srcset="{{ url_for('static', filename='uploads/hero-example.webp') }}" type="image/webp">
-        <!-- local jpg fallback with GitHub raw fallback if file not served -->
-        <img
-          src="{{ url_for('static', filename='uploads/hero-example.jpg') }}"
-          alt="Children playing at Jevicarn"
-          loading="lazy"
-          decoding="async"
-          onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/JeanPromise/Jevicarn-Christian-School/main/static/uploads/hero-example.jpg';">
-      </picture>
+    <div class="hero-media card">
+      <img src="{{ url_for('static', filename='uploads/hero-example.jpg') }}" alt="kids playing">
     </div>
   </div>
 </section>
 
-<!-- ENROLLMENT -->
-<section class="enrollment container card" aria-labelledby="enroll-heading" style="margin-top:32px;">
-  <h2 id="enroll-heading" style="color:var(--accent);font-weight:800;font-size:1.6rem;">2026 Enrollment Now Open</h2>
-  <p class="muted" style="max-width:700px;margin:8px auto;">Give your child a bright start at <strong>Jevicarn Christian Kindergarten & School</strong>.</p>
-
-  <div class="enroll-features">
+<!-- ENROLLMENT SECTION -->
+<section class="enrollment container card" style="margin-top:40px; text-align:center; background:linear-gradient(180deg,#fef6e4,#fff);">
+  <h2 style="color:#ff7b00; font-size:2.2em; font-weight:800;">2026 Enrollment Now Open</h2>
+  <p style="font-size:1.1em; color:#34495e; max-width:700px; margin:10px auto;">
+    Give your child a bright start at <strong>Jevicarn Christian Kindergarten & School</strong>.
+  </p>
+  
+  <div class="enroll-features" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-top:25px;">
     <div class="feature-box">
-      <i class="fa-solid fa-child-reaching icon" aria-hidden="true"></i>
+      <i class="fa-solid fa-child-reaching icon"></i>
       <h4>Fun & Engaging Learning</h4>
     </div>
     <div class="feature-box">
-      <i class="fa-solid fa-hand-holding-heart icon" aria-hidden="true"></i>
-      <h4>Safe & Nurturing</h4>
+      <i class="fa-solid fa-hand-holding-heart icon"></i>
+      <h4>Safe & Nurturing Environment</h4>
     </div>
     <div class="feature-box">
-      <i class="fa-solid fa-chalkboard-user icon" aria-hidden="true"></i>
-      <h4>Qualified Teachers</h4>
+      <i class="fa-solid fa-chalkboard-user icon"></i>
+      <h4>Experienced & Caring Teachers</h4>
     </div>
     <div class="feature-box">
-      <i class="fa-solid fa-palette icon" aria-hidden="true"></i>
-      <h4>Play-Based Curriculum</h4>
+      <i class="fa-solid fa-palette icon"></i>
+      <h4>Creative & Play-Based Curriculum</h4>
     </div>
   </div>
 
-  <div style="margin-top:18px; text-align:center;">
-    <a href="/contact" class="btn btn-primary">Enroll Today</a>
-    <p style="margin-top:10px;font-weight:600;color:var(--muted);">Limited slots available</p>
+  <div style="margin-top:25px;">
+    <a href="/contact" class="btn btn-primary large">Enroll Today</a>
+    <p style="margin-top:10px;font-weight:600;">Limited slots available</p>
   </div>
 </section>
 
-<!-- PROGRAMS -->
-<section class="programs container card" style="margin-top:36px;">
-  <h2 style="color:var(--text); font-size:1.6rem; font-weight:800;">Our Programs</h2>
-  <p class="muted" style="max-width:700px;margin:8px auto;">We provide care and education for every stage — from the littlest learners to early school-age children.</p>
+<!-- PROGRAMS SECTION -->
+<section class="programs container card" style="margin-top:50px; text-align:center;">
+  <h2 style="color:#23303B; font-size:2em; font-weight:800;">Our Programs</h2>
+  <p style="font-size:1.05em; max-width:700px; margin:10px auto; color:#555;">
+    We provide care and education for every stage — from the littlest learners to early school-age children.
+  </p>
 
-  <div class="programs-grid" style="margin-top:18px;">
+  <div class="programs-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;margin-top:25px;">
     <div class="program-box">
-      <i class="fa-solid fa-baby icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
+      <i class="fa-solid fa-baby icon" style="font-size:2em;color:#ff7b00;"></i>
       <h3>Daycare</h3>
       <p>For ages 1–3. Warm care, nap time, playtime, and gentle introduction to learning.</p>
     </div>
 
     <div class="program-box">
-      <i class="fa-solid fa-school icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
+      <i class="fa-solid fa-school icon" style="font-size:2em;color:#ff7b00;"></i>
       <h3>Kindergarten</h3>
       <p>For ages 3–6. Fun, creative, and faith-based early learning to prepare for primary school.</p>
     </div>
 
     <div class="program-box">
-      <i class="fa-solid fa-pencil-alt icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
+      <i class="fa-solid fa-pencil-alt icon" style="font-size:2em;color:#ff7b00;"></i>
       <h3>Primary School</h3>
       <p>Competency-based education with caring teachers and small class sizes for focus and growth.</p>
     </div>
 
     <div class="program-box">
-      <i class="fa-solid fa-moon icon" style="font-size:2rem;color:var(--accent);" aria-hidden="true"></i>
+      <i class="fa-solid fa-moon icon" style="font-size:2em;color:#ff7b00;"></i>
       <h3>Nightcare</h3>
       <p>For working parents. Safe overnight care with calm routines, sleep monitoring, and meals.</p>
     </div>
   </div>
 
-  <div style="margin-top:18px;text-align:center;"><a href="/contact" class="btn btn-primary">Inquire or Enroll</a></div>
+  <div style="margin-top:25px;">
+    <a href="/contact" class="btn btn-primary large">Inquire or Enroll</a>
+  </div>
 </section>
 
-<!-- TRANSPORT -->
-<section class="transport container card" style="margin-top:32px;text-align:center;">
-  <h2 style="color:var(--text);">Safe School Transport</h2>
-  <p class="muted" style="max-width:650px;margin:auto;font-size:1.02rem;">Reliable pickup and drop-off for nearby estates — safe, insured drivers and friendly assistants.</p>
+<!-- Add this in <head> if not already present -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
-  <div class="transport-grid" style="margin-top:18px;">
-    <div class="transport-photo"><img src="{{ url_for('static', filename='uploads/transport1.jpg') }}?v=1" alt="School transport van" loading="lazy"></div>
-    <div class="transport-photo"><img src="{{ url_for('static', filename='uploads/transport2.jpg') }}?v=2" alt="School bus" loading="lazy"></div>
+<!-- TRANSPORT SECTION -->
+<section class="transport container card" style="margin-top:40px; text-align:center;">
+  <h2 style="color:#23303B;">Safe School Transport</h2>
+  <p style="max-width:650px; margin:auto; font-size:1.1em;">
+    We offer reliable pickup and drop-off services for nearby estates and neighborhoods, ensuring every child arrives safely and comfortably every day.
+  </p>
+
+  <div class="transport-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:20px;">
+    <div class="transport-photo">
+      <img src="{{ url_for('static', filename='uploads/transport1.jpg') }}?v=1" alt="School transport van" loading="lazy" style="width:100%;border-radius:16px;">
+    </div>
+    <div class="transport-photo">
+      <img src="{{ url_for('static', filename='uploads/transport2.jpg') }}?v=2"  alt="School bus" loading="lazy" style="width:100%;border-radius:16px;">
+    </div>
   </div>
 
-  <p style="margin-top:12px;color:var(--muted);font-weight:600;">Available for Juja and nearby areas</p>
+  <p style="margin-top:12px; color:#555; font-weight:600;">Available for Juja and nearby areas</p>
 </section>
 
-<!-- LOCATION -->
-<section class="location container" style="margin-top:32px;text-align:center;">
-  <h2 style="color:var(--text);">Find Us</h2>
-  <p class="muted" style="max-width:700px;margin:auto;font-size:1.02rem;">We are located at <strong>Ebenezer Centre near Faida Ndogo, Juja, Kiambu County</strong>.</p>
-
-  <iframe src="https://www.google.com/maps?q=Ebenezer+Centre,+Juja,+Kiambu+County,+Kenya&output=embed" width="100%" height="300" style="border-radius:12px;margin-top:16px;border:0;" allowfullscreen="" loading="lazy"></iframe>
+<!-- LOCATION SECTION -->
+<section class="location container" style="margin-top:40px; text-align:center;">
+  <h2 style="color:#23303B;"> Find Us</h2>
+  <p style="max-width:650px; margin:auto; font-size:1.1em;">
+    We are located at <strong>Ebenezer Centre near Faida Ndogo, Juja, Kiambu County</strong>.<br>
+    School transport is available for nearby estates and neighbourhoods.
+  </p>
+  <iframe 
+    src="https://www.google.com/maps?q=Ebenezer+Centre,+Juja,+Kiambu+County,+Kenya&output=embed" 
+    width="100%" height="300" style="border-radius:16px; margin-top:15px;" allowfullscreen="" loading="lazy">
+  </iframe>
 </section>
 
-<!-- GALLERY -->
-<section class="gallery-preview container" style="margin-top:32px;">
+
+<!-- GALLERY PREVIEW -->
+<section class="gallery-preview container">
   <h2>Snapshots from our day</h2>
-  <div class="grid" style="margin-top:12px;">
+  <div class="grid">
     {% for img in images[:8] %}
       <div class="thumb"><img src="{{ url_for('static', filename='uploads/' ~ img) }}" loading="lazy" alt="photo"></div>
     {% else %}
       <p>No photos yet — upload via the admin panel.</p>
     {% endfor %}
   </div>
-  <div style="text-align:center;margin-top:12px;"><a href="/gallery" class="btn btn-primary">View Full Gallery</a></div>
+  <div style="text-align:center; margin-top:16px;">
+    <a href="/gallery" class="btn btn-primary">View Full Gallery</a>
+  </div>
 </section>
 
 <!-- WHY CHOOSE US -->
-<section class="why container card" style="margin-top:32px;">
+<section class="why container card">
   <h2>Why parents choose us</h2>
-  <div class="why-grid" style="margin-top:12px;">
-    <div class="why-item"><h3>Faith & Character</h3><p>We instill Christian values of kindness, honesty, and teamwork.</p></div>
-    <div class="why-item"><h3>Healthy meals</h3><p>Balanced nutrition for strong bodies and bright minds.</p></div>
-    <div class="why-item"><h3>Safe environment</h3><p>Secure compound, clean classrooms, and warm caretakers.</p></div>
+  <div class="why-grid">
+    <div class="why-item">
+      <h3>Faith & Character</h3>
+      <p>We instill Christian values of kindness, honesty, and teamwork from day one.</p>
+    </div>
+    <div class="why-item">
+      <h3>Healthy meals</h3>
+      <p>Balanced nutrition for strong bodies and bright minds.</p>
+    </div>
+    <div class="why-item">
+      <h3>Safe environment</h3>
+      <p>Secure compound, clean classrooms, and warm caretakers.</p>
+    </div>
   </div>
 </section>
 
