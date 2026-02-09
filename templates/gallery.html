@@ -1,75 +1,106 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="gallery">
-  <h2 class="section-title">Our Lovely Moments</h2>
-  <p class="section-subtitle">A glimpse of joy, creativity, and laughter at Jevicarn Christian Kindergarten.</p>
+<section class="gallery-preview container">
+  <h2>Our Lovely Moments</h2>
+  <p class="muted">A glimpse of joy, creativity, and laughter at Jevicarn Christian Kindergarten.</p>
 
-  <div class="gallery-grid">
+  <div class="grid" aria-live="polite" aria-label="Photo gallery">
+    {# Ensure `images` holds static paths like 'uploads/...' or full static paths. We use url_for exactly as your app expects. #}
     {% for image in images %}
-      <div class="gallery-item">
-        <img src="{{ url_for('static', filename=image) }}" 
-             alt="Daycare photo"
-             loading="lazy"
-             onclick="openLightbox({{ loop.index0 }})">
+      <div class="thumb" role="button" tabindex="0" aria-label="Open image {{ loop.index }}">
+        <img
+          src="{{ url_for('static', filename=image) }}"
+          alt="{{ image | replace('uploads/','') | replace('.jpg','') | replace('.png','') }}"
+          loading="lazy"
+          data-filename="{{ image }}"
+          data-index="{{ loop.index0 }}">
       </div>
     {% else %}
       <p class="no-images">No images found in the gallery yet.</p>
     {% endfor %}
   </div>
+
+  <div style="text-align:center; margin-top:16px;">
+    <a href="/contact" class="btn btn-primary">Inquire / Upload More Photos</a>
+  </div>
 </section>
 
-<!-- Lightbox Modal -->
-<div id="lightbox" class="lightbox">
-  <span class="close-btn" onclick="closeLightbox()">×</span>
-  <span class="arrow left" onclick="prevImage()">&#10094;</span>
-  <img id="lightbox-img" src="" alt="Expanded photo">
-  <span class="arrow right" onclick="nextImage()">&#10095;</span>
-</div>
-<div id="lightbox">
-  <span class="close-btn">&times;</span>
-  <span class="nav-arrow left">&#10094;</span>
-  <span class="nav-arrow right">&#10095;</span>
-  <img src="" alt="lightbox image">
+{# --- Simple fallback lightbox (only used if __JevicarnViewer not present) --- #}
+<div id="fallback-lightbox" aria-hidden="true" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(2,6,10,0.85);z-index:200;">
+  <button id="fb-close" aria-label="Close" style="position:absolute;right:18px;top:18px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.04);border:0;color:var(--text);">✕</button>
+  <button id="fb-prev" aria-label="Previous" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);">‹</button>
+  <img id="fb-img" src="" alt="" style="max-width:92vw;max-height:82vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.7)">
+  <button id="fb-next" aria-label="Next" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);">›</button>
 </div>
 
 <script>
-  let images = [
-    {% for image in images %}
-      "{{ url_for('static', filename=image) }}"{% if not loop.last %},{% endif %}
-    {% endfor %}
-  ];
-  let currentIndex = 0;
+(function(){
+  // Build references
+  const thumbs = Array.from(document.querySelectorAll('.gallery-preview .grid .thumb img'));
+  if(!thumbs.length) return;
 
-  function openLightbox(index) {
-    currentIndex = index;
-    document.getElementById("lightbox").style.display = "flex";
-    document.getElementById("lightbox-img").src = images[currentIndex];
+  // If premium viewer exists (base.html provides window.__JevicarnViewer), use it
+  if(window.__JevicarnViewer && typeof window.__JevicarnViewer.openAt === 'function'){
+    thumbs.forEach((img, i) => {
+      img.style.touchAction = 'none';
+      img.addEventListener('click', ()=> window.__JevicarnViewer.openAt(i));
+      img.parentElement.addEventListener('keydown', (e)=> { if(e.key==='Enter' || e.key===' ') { e.preventDefault(); window.__JevicarnViewer.openAt(i); } });
+    });
+    return; // done — premium viewer will handle everything
   }
 
-  function closeLightbox() {
-    document.getElementById("lightbox").style.display = "none";
-  }
+  // --- Fallback lightbox logic if premium viewer unavailable ---
+  const fb = document.getElementById('fallback-lightbox');
+  const fbImg = document.getElementById('fb-img');
+  const fbPrev = document.getElementById('fb-prev');
+  const fbNext = document.getElementById('fb-next');
+  const fbClose = document.getElementById('fb-close');
+  const srcs = thumbs.map(t => t.src);
+  let current = 0;
 
-  function nextImage() {
-    currentIndex = (currentIndex + 1) % images.length;
-    document.getElementById("lightbox-img").src = images[currentIndex];
+  function openFallback(i){
+    current = (i + srcs.length) % srcs.length;
+    fbImg.src = srcs[current];
+    fbImg.alt = thumbs[current].alt || '';
+    fb.style.display = 'flex';
+    fb.setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
   }
-
-  function prevImage() {
-    currentIndex = (currentIndex - 1 + images.length) % images.length;
-    document.getElementById("lightbox-img").src = images[currentIndex];
+  function closeFallback(){
+    fb.style.display = 'none';
+    fb.setAttribute('aria-hidden','true');
+    document.body.style.overflow = '';
+    fbImg.src = '';
   }
+  function next(){ current = (current + 1) % srcs.length; fbImg.src = srcs[current]; }
+  function prev(){ current = (current - 1 + srcs.length) % srcs.length; fbImg.src = srcs[current]; }
 
-  // Swipe support for mobile
-  let startX = 0;
-  const lightbox = document.getElementById("lightbox");
-  lightbox.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-  lightbox.addEventListener('touchend', e => {
-    let endX = e.changedTouches[0].clientX;
-    if (startX - endX > 50) nextImage();      // swipe left
-    else if (endX - startX > 50) prevImage(); // swipe right
+  thumbs.forEach((img,i)=>{
+    img.addEventListener('click', ()=> openFallback(i));
+    img.parentElement.addEventListener('keydown', (e)=> { if(e.key==='Enter' || e.key===' ') { e.preventDefault(); openFallback(i); } });
   });
+
+  fbClose.addEventListener('click', closeFallback);
+  fbNext.addEventListener('click', next);
+  fbPrev.addEventListener('click', prev);
+
+  // keyboard + swipe
+  window.addEventListener('keydown', (e)=>{
+    if(fb.style.display !== 'flex') return;
+    if(e.key === 'Escape') closeFallback();
+    if(e.key === 'ArrowRight') next();
+    if(e.key === 'ArrowLeft') prev();
+  });
+
+  let startX = 0;
+  fb.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+  fb.addEventListener('touchend', e => {
+    const endX = e.changedTouches[0].clientX;
+    if(startX - endX > 50) next();
+    else if(endX - startX > 50) prev();
+  }, {passive:true});
+})();
 </script>
 
 {% endblock %}
