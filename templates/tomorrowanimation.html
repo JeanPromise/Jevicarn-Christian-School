@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jevicarn • Opening — Tomorrow Technology</title>
+
+  <style>
+    /* Basic reset */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(111,45,189,0.12), transparent 10%),
+                  linear-gradient(180deg,#07162a,#0a2133);
+      color:#f8fbff;
+      font-family: 'Montserrat', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .stage{
+      width:min(1100px,94vw);
+      max-width:1100px;
+      text-align:center;
+      padding:36px;
+      border-radius:14px;
+      backdrop-filter: blur(6px) saturate(1.1);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: 0 30px 90px rgba(2,6,10,0.6);
+      position:relative;
+      overflow:visible;
+    }
+
+    /* Skip button */
+    .skip {
+      position:absolute;
+      right:18px;
+      top:18px;
+      background:transparent;
+      color:rgba(255,255,255,0.85);
+      border:1px solid rgba(255,255,255,0.06);
+      padding:8px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Title */
+    .title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight:800;
+      font-size: clamp(28px, 5.2vw, 48px);
+      line-height:1;
+      letter-spacing:0.6px;
+      color:var(--text,#f7fbfe);
+      margin-bottom:18px;
+      opacity:0;
+    }
+
+    .title .small {
+      display:block;
+      font-weight:600;
+      font-size: clamp(14px, 1.8vw, 18px);
+      color: rgba(255,255,255,0.86);
+      margin-top:8px;
+    }
+
+    /* Underline grow */
+    .underline {
+      height:4px;
+      width:0;
+      margin: 8px auto 0;
+      border-radius:999px;
+      background:linear-gradient(90deg,#ff8a60,#00c2a8);
+      opacity:0;
+    }
+
+    /* Bulb area */
+    .bulb-wrap{
+      margin-top:26px;
+      opacity:0;
+      transform: translateY(10px) scale(.98);
+    }
+
+    /* small credit */
+    .credit{
+      margin-top:12px;
+      color: rgba(255,255,255,0.78);
+      font-size:14px;
+      font-weight:600;
+      opacity:0;
+      transform: translateY(8px);
+    }
+    .credit small{display:block;font-weight:500;color:rgba(255,255,255,0.6);font-size:12px;margin-top:6px}
+
+    /* subtle bulb glow */
+    .bulb{
+      width:88px;height:88px;margin:0 auto;display:block;
+      filter: drop-shadow(0 8px 28px rgba(111,45,189,0.18));
+    }
+
+    /* Animations */
+    @keyframes fadeInUp { from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:translateY(0)} }
+    @keyframes underlineGrow { from{width:0;opacity:0} to{width:260px;opacity:1} }
+    @keyframes bulbPop { 0%{opacity:0; transform:translateY(8px) scale(.92)} 60%{opacity:1; transform:translateY(-6px) scale(1.06)} 100%{transform:translateY(0) scale(1)} }
+    @keyframes creditIn { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+    @keyframes titleFadeOut { from{opacity:1} to{opacity:0} }
+
+    /* Sequence timing */
+    .title.show { animation: fadeInUp 700ms cubic-bezier(.2,.9,.25,1) forwards; animation-delay: 120ms; }
+    .underline.show { animation: underlineGrow 700ms cubic-bezier(.22,.95,.18,1) forwards; animation-delay: 840ms; }
+    .title.out { animation: titleFadeOut 420ms ease forwards; animation-delay: 2800ms; }
+    .bulb-wrap.show { animation: bulbPop 560ms cubic-bezier(.2,.9,.25,1) forwards; animation-delay: 3200ms; }
+    .credit.show { animation: creditIn 420ms ease forwards; animation-delay: 3800ms; }
+
+    /* Reduced motion fallback */
+    @media (prefers-reduced-motion: reduce) {
+      .title, .underline, .bulb-wrap, .credit { animation: none !important; opacity:1 !important; transform:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" role="main" aria-live="polite">
+    <button class="skip" id="skipBtn" aria-label="Skip animation">Skip →</button>
+
+    <h1 class="title" id="mainTitle">
+      Jevicarn Christian Kindergarten &amp; School
+      <span class="small">Nurturing curiosity, creativity & kindness</span>
+    </h1>
+
+    <div class="underline" id="underline" aria-hidden="true"></div>
+
+    <div class="bulb-wrap" id="bulbWrap" aria-hidden="true">
+      <!-- SVG bulb (simple, crisp) -->
+      <svg class="bulb" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <radialGradient id="g1" cx="30%" cy="25%">
+            <stop offset="0%" stop-color="#fff7d9"/>
+            <stop offset="60%" stop-color="#ffd89a"/>
+            <stop offset="100%" stop-color="#ffb36b"/>
+          </radialGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <g filter="url(#glow)">
+          <ellipse cx="32" cy="24" rx="12" ry="14" fill="url(#g1)"/>
+          <path d="M24 38c0 4 6 4 8 4s8 0 8-4v-2h-16v2z" fill="#e6c08a"/>
+          <rect x="26" y="40" width="12" height="6" rx="2" fill="#2b1f2e"/>
+          <g transform="translate(2,2)" fill="rgba(255,255,255,0.06)">
+            <rect x="30" y="2" width="2" height="8" rx="1"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="credit" id="credit" aria-hidden="true">
+      Crafted by <strong>Tomorrow Technology Company</strong>
+      <small>Innovation • UX • Reliability</small>
+    </div>
+  </div>
+
+  <script>
+    // Respect reduced motion
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Elements
+    const title = document.getElementById('mainTitle');
+    const underline = document.getElementById('underline');
+    const bulbWrap = document.getElementById('bulbWrap');
+    const credit = document.getElementById('credit');
+    const skip = document.getElementById('skipBtn');
+
+    // Helper: try redirect target '/home' first, fallback to '/'
+    async function redirectHome() {
+      try {
+        const res = await fetch('/home', { method: 'HEAD' });
+        if(res.ok) { window.location.href = '/home'; return; }
+      } catch(e){}
+      // fallback
+      window.location.href = '/';
+    }
+
+    // If reduced motion -> show static and redirect quickly
+    if (prefersReduced) {
+      title.style.opacity = 1;
+      underline.style.width = '260px';
+      underline.style.opacity = 1;
+      bulbWrap.style.opacity = 1;
+      credit.style.opacity = 1;
+      // short pause then redirect
+      setTimeout(redirectHome, 900);
+    } else {
+      // run sequence
+      // 1) show title
+      requestAnimationFrame(()=> title.classList.add('show') );
+      // 2) grow underline after title
+      setTimeout(()=> underline.classList.add('show'), 850);
+      // 3) fade out title a bit later so bulb shines
+      setTimeout(()=> title.classList.add('out'), 2800);
+      // 4) show bulb
+      setTimeout(()=> bulbWrap.classList.add('show'), 3200);
+      // 5) show credit
+      setTimeout(()=> credit.classList.add('show'), 3800);
+      // 6) redirect after full sequence (allow ~2s viewing)
+      setTimeout(()=> redirectHome(), 6200);
+    }
+
+    // Skip button -> immediate redirect
+    skip.addEventListener('click', () => redirectHome());
+
+    // Accessibility: allow Enter on skip
+    skip.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); redirectHome(); }
+    });
+
+    // Also allow clicking anywhere during animation to skip (optional)
+    document.addEventListener('click', (e)=>{
+      // ignore clicks on the stage controls (skip button)
+      if(e.target === skip) return;
+      // If user clicks outside the stage area (i.e., any click), we won't redirect to avoid accidental quits.
+      // So we keep only the explicit Skip button active.
+    });
+  </script>
+</body>
+</html>
