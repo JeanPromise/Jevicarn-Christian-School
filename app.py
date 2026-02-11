@@ -2,6 +2,7 @@
 """
 app.py - Jevicarn site with one-time admin registration then login using hithere.db
 Admin dashboard now includes gallery management controls and GitHub repo file management.
+Pulse receiver endpoint added to accept pings from breathe/pulse senders.
 """
 from flask import (
     Flask, render_template, request, redirect, url_for, flash,
@@ -35,6 +36,9 @@ ALLOWED_IMG_EXTS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'}
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 GITHUB_REPO = os.getenv('GITHUB_REPO')  # "owner/repo"
 GITHUB_BRANCH = os.getenv('GITHUB_BRANCH', 'main')
+
+# Pulse / forwarding token (accept either name)
+PULSE_TOKEN = os.getenv('PULSE_TOKEN') or os.getenv('FORWARD_TOKEN')
 
 # --- DB helpers & initialization ---
 def get_conn(db_file):
@@ -209,6 +213,79 @@ def uploaded_file(filename):
 @app.route('/keepalive-ping')
 def keepalive_ping():
     return "pong", 200
+
+# --- Pulse receiver endpoint (for breathe/pinger) ---
+@app.route('/pulse_receiver', methods=['POST', 'GET'])
+def pulse_receiver():
+    """
+    Accept inbound pulses from breathe or other pingers.
+    - If configured, validates X-PULSE-TOKEN header against PULSE_TOKEN.
+    - Accepts JSON or form data.
+    - Stores a record in messages table (sender, text, platform='pulse', location=request.remote_addr).
+    - Returns JSON with DB id and summary.
+    """
+    # optional token validation
+    if PULSE_TOKEN:
+        incoming_token = request.headers.get('X-PULSE-TOKEN')
+        if incoming_token != PULSE_TOKEN:
+            return jsonify({'success': False, 'error': 'invalid_token'}), 403
+
+    # parse incoming content
+    payload = None
+    try:
+        payload = request.get_json(silent=True)
+    except Exception:
+        payload = None
+
+    if payload is None:
+        # try form or fallback
+        if request.form:
+            payload = request.form.to_dict()
+        else:
+            # if raw body present, try decode
+            try:
+                raw = request.get_data(as_text=True)
+                if raw:
+                    try:
+                        payload = json.loads(raw)
+                    except Exception:
+                        payload = {'raw_body': raw}
+                else:
+                    payload = {'message': 'ping'}
+            except Exception:
+                payload = {'message': 'ping'}
+
+    # create text summary to store
+    try:
+        text_to_store = json.dumps(payload, ensure_ascii=False) if isinstance(payload, (dict, list)) else str(payload)
+    except Exception:
+        text_to_store = str(payload)
+
+    sender_name = None
+    if isinstance(payload, dict):
+        sender_name = payload.get('source') or payload.get('sender') or 'pulse'
+    else:
+        sender_name = 'pulse'
+
+    location = payload.get('location') if isinstance(payload, dict) and payload.get('location') else request.remote_addr
+    platform = 'pulse'
+
+    # insert into messages table
+    try:
+        conn = get_conn(CONTACTS_DB)
+        c = conn.cursor()
+        c.execute('INSERT INTO messages (sender, receiver, text, location, platform) VALUES (?, ?, ?, ?, ?)',
+                  (sender_name, 'admin', text_to_store, location, platform))
+        conn.commit()
+        new_id = c.lastrowid
+        conn.close()
+    except Exception as e:
+        # Log and return error
+        print("pulse_receiver: DB insert error:", e)
+        return jsonify({'success': False, 'error': 'db_error', 'detail': str(e)}), 500
+
+    print(f"pulse_receiver: stored id={new_id} from {sender_name} ({location})")
+    return jsonify({'success': True, 'id': new_id, 'sender': sender_name}), 200
 
 # --- ADMIN / AUTH ROUTES ---
 @app.route('/admin', methods=['GET'])
@@ -722,8 +799,9 @@ def admin_messages_export():
     return send_file(mem, download_name='messages_export.csv', as_attachment=True)
 
 # --- KEEP-ALIVE thread ---
+# default changed to include the -z08v onrender URL you provided
 def keep_alive():
-    url = os.getenv('KEEP_ALIVE_URL', 'https://jevicarn-christian-school.onrender.com')
+    url = os.getenv('KEEP_ALIVE_URL', 'https://jevicarn-christian-school-z08v.onrender.com')
     while True:
         try:
             requests.get(f"{url}/keepalive-ping", timeout=10)
