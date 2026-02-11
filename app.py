@@ -213,6 +213,9 @@ def uploaded_file(filename):
 @app.route('/keepalive-ping')
 def keepalive_ping():
     return "pong", 200
+@app.route("/pulse_receiver", methods=["POST", "GET"])
+def pulse_receiver():
+    return "ok", 200
 
 # --- Pulse receiver endpoint (for breathe/pinger) ---
 @app.route('/pulse_receiver', methods=['POST', 'GET'])
